@@ -1,1 +1,1 @@
-# C-mini-compiler
+# CPP-mini-compiler
