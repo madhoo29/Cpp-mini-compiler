@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 /*#include "yy.tab.h"*/
 
 typedef struct SYM{
@@ -22,6 +23,19 @@ typedef struct scope_head{
 scope_head* table[20]; //stack
 int i = 0; //stack pointer
 
+void display(){
+	scope_head* temp = table[i];
+	int c = i;
+	while(c >= 0){
+		sym* node = temp->vars;
+		while(node != NULL){
+			printf("%s %d\n",node->name, c);
+			node = node->next;
+		}
+		c--;
+		temp = table[c];
+	}
+}
 
 sym* create_var(char* name, int line, int type){
 	sym* new = (sym*)malloc(sizeof(sym));
@@ -43,7 +57,10 @@ void push(scope_head* node){
 }
 
 void pop(){
-	if(table[i]->vars == NULL);
+	if(table[i]->vars == NULL){
+		free(table[i--]);
+		return;
+	}
 	if(table[i]->vars->next == NULL){
 		free(table[i]->vars->next);
 		free(table[i]->vars);
@@ -61,13 +78,13 @@ void pop(){
 	free(table[i--]);
 }
 
-int lookup(char* name, int scope, int type, int line){
+int lookup(char* name, int scope, int type, int line){ // declarations only
 	if(scope == table[i]->scope){
 		sym* temp = table[i]->vars;
 		while(temp != NULL && temp->next != NULL){
 			if(strcmp(temp->name, name) == 0){
 				// yyerror("Redeclaration of variable %s", name);
-				return 0;
+				return 0; // redeclaration error
 			}
 			temp = temp->next;
 		}
@@ -77,11 +94,13 @@ int lookup(char* name, int scope, int type, int line){
 			table[i]->vars = new;
 		else
 			temp->next = new;
-		return 1;
+		return 1; // no error
 	}
 }
 
-int check(char* name, int scope, int type, int line, int value){
+#if 0
+//int check(char* name, int scope, int type, int line, int value){ // usage 
+int check(char* name, int scope, int line, int value){ // usage 
 	index = i;
 	while(index > 0){
 		sym* temp = table[index]->vars;
@@ -90,16 +109,35 @@ int check(char* name, int scope, int type, int line, int value){
 				// yyerror("Redeclaration of variable %s", name);
 				temp->used_lines[temp->num++] = line;
 				temp->value = value;
-				return 1;
+				return 1; // no error
 			}
 			temp = temp->next;
 		}
 		index--;
 	}
-	return 0;
+	return 0; // no declaration error
+}
+#endif
+
+int check(char* name, int scope, int line){ // usage 
+	int index = i;
+	while(index > 0){
+		sym* temp = table[index]->vars;
+		while(temp != NULL && temp->next != NULL){
+			if(strcmp(temp->name, name) == 0){
+				// yyerror("Redeclaration of variable %s", name);
+				temp->used_lines[temp->num++] = line;
+				return 1; // no error
+			}
+			temp = temp->next;
+		}
+		index--;
+	}
+	return 0; // no declaration error
 }	
 
 void enter_scope(int scope){
+	display();
 	scope_head* new = (scope_head*)malloc(sizeof(scope_head));
 	new->vars = NULL;
 	new->scope = scope;
@@ -107,11 +145,14 @@ void enter_scope(int scope){
 }
 
 void exit_scope(int scope){
+	display();
 	if(table[i]->scope == scope)
 		pop();
 	else
 		printf("unidentified error\n");
 }
+
+
 
 
 
