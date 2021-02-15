@@ -1,0 +1,27 @@
+#include<stdio.h>
+//using namespace std   WRITE RULE
+void main()
+{
+    /*while(x);  NOT WORKING - semicolon after while
+    
+    cout << "Type a number: ";  Difference between T STRING and T STRING VAL? for rule 'Output'
+    cin >> x ; Unexpected semicolon
+    switch(x)  ACCOMODATE blank switch case - case label, default and break are all optional
+    {
+
+    }
+    x++;  WHY DOESN'T Statements :Statements exp as a rule work? Gives shift reduce
+    */
+
+    
+    int x = 0;
+    while(x<3)
+    {
+        x=x+1;
+    }
+    
+
+
+    
+    
+}

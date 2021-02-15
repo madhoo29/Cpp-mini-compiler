@@ -1,42 +1,62 @@
 %{
     #include<string.h>
     #include<stdio.h>
-    #include "y.tab.h"
 
-    int yylval;
-    void yyerror(char *);
+    // int yylex();
+
+// typedef struct YYLTYPE
+// {
+//     int first_line;
+//     int first_column;
+//     int last_line;
+//     int last_column;
+//     char *filename; /* use to keep track of which file we're currently in */
+//     int hel;    /* no errors = 0, warning = 1, error = 2, fatal = 3 */
+// } YYLTYPE;
+
+
+    #include "compiler.tab.h"
+    extern void yyerror(const char *); 
+
+    // int yylval;
+    // void yyerror(char *);
 	unsigned int lineno = 0;
 
-    extern YYLTYPE yyloc;
-    #define YY_USER_INIT yylloc.first_line = 1;
+   // extern YYLTYPE yylloc;
+  //#define YYLTYPE * yylloc;
+   //#define YYSTYPE char * ;
+  //  #define YYSTYPE char*
+   
+    // #define YY_USER_INIT yylloc.first_line = 1;
     
 %}
 
-SINGLE_CHAR_OPERATORS "+"|"-"|"&"|"!"|"^"|"*"|","|"~"|";"|"/"|"="|"%"|">"|"<"|"."|"["|"]"|":"|"?"|"("|")"|"{"|"}"
+SINGLE_CHAR_OPERATORS "+"|"-"|"&"|"!"|"^"|"*"|","|"~"|";"|"/"|"="|"%"|">"|"<"|"."|"["|"]"|":"|"?"|"("|")"|"{"|"}"|"\""
 SINGLE_COMMENT	\/\/(.*)
 MULTI_COMMENT	\/\*(.*\n)*.*\*\/
 DIGIT 			[0-9]
 FRAC			(\.{DIGIT}+)?
 EXP				([Ee][+-]?{DIGIT}+)?
 NUMBER 			({DIGIT}+{FRAC}{EXP})
-LETTER			[a-zA-Z]
-IDENTIFIER		[a-zA-Z_][a-zA-Z_0-9]*
+LETTER			[a-zA-Z_]
+IDENTIFIER		[a-zA-Z_][a-zA-Z0-9_]*
 PRINT			[ -~]
 CCONST			(\'{PRINT}\')|(\'\\[nftrbv]\')
 STRING			\"[ -~]*\"
 ICONST			{DIGIT}+
 DOUBLE			({DIGIT}+(\.{DIGIT}+){EXP})
-OPEN_MULTICOMMENT \/\*
+OPEN_MULTICOMMENT \/\* 
 CLOSE_MULTICOMMENT \*\/
 
 
 
 %%
 
+[ \t] {}
 
 SINGLE_COMMENT ;
 
-{OPEN_MULTICOMMENT}.*{CLOSE_MULTICOMMENT} ;
+{OPEN_MULTICOMMENT}(.*\n)*.*{CLOSE_MULTICOMMENT} ;
 
 {OPEN_MULTICOMMENT}.* {yyerror("Unterminated Comment\n");}
 
@@ -46,20 +66,41 @@ SINGLE_COMMENT ;
 [\n]            { yylloc.first_line = yylloc.last_line;
                           yylloc.first_column = ++yylloc.last_column;
                           yylloc.last_column = 0; 
-                          yyloc.first_line = lineno++;
-                          return T_NEWLINE;}
+                          yylloc.first_line = lineno++;
+                }
 
 "main()"	        { yylloc.first_line = yylloc.last_line;
                   yylloc.first_column = ++yylloc.last_column; 
                   yylloc.last_column += yyleng - 1; 
                   return T_MAIN; }
 
-"T_WHILE"	{ 
+"printf"	        { yylloc.first_line = yylloc.last_line;
+                  yylloc.first_column = ++yylloc.last_column; 
+                  yylloc.last_column += yyleng - 1; 
+                  return T_PRINT; }
+
+
+"while"	{ 
                   yylloc.first_line = yylloc.last_line;
                   yylloc.first_column = ++yylloc.last_column; 
                   yylloc.last_column += yyleng - 1; 
-                  return T_T_WHILE; }
-                          
+                  return T_WHILE; }
+
+"switch"	{ 
+                  yylloc.first_line = yylloc.last_line;
+                  yylloc.first_column = ++yylloc.last_column; 
+                  yylloc.last_column += yyleng - 1; 
+                  return T_SWITCH; }
+"default"	{ 
+                  yylloc.first_line = yylloc.last_line;
+                  yylloc.first_column = ++yylloc.last_column; 
+                  yylloc.last_column += yyleng - 1; 
+                  return T_DEFAULT; }
+"case"    { 
+                  yylloc.first_line = yylloc.last_line;
+                  yylloc.first_column = ++yylloc.last_column; 
+                  yylloc.last_column += yyleng - 1; 
+                  return T_CASE; }                  
                           
 "if"    { 
                   yylloc.first_line = yylloc.last_line;
@@ -73,7 +114,7 @@ SINGLE_COMMENT ;
                   yylloc.last_column += yyleng - 1; 
                   return T_ELSE; }
 
-"include" { 
+"#include" { 
                   yylloc.first_line = yylloc.last_line;
                   yylloc.first_column = ++yylloc.last_column; 
                   yylloc.last_column += yyleng - 1; 
@@ -127,11 +168,19 @@ SINGLE_COMMENT ;
             yylloc.last_column += yyleng -1;
       		   return T_RETURN;
 	    }
+"break"    { 
+                  yylloc.first_line = yylloc.last_line;
+                  yylloc.first_column = ++yylloc.last_column; 
+                  yylloc.last_column += yyleng - 1; 
+                  return T_BREAK; }
             
 "cout"  {   yylloc.first_line = yylloc.last_line;
             yylloc.first_column = ++yylloc.last_column;
             yylloc.last_column += yyleng -1;
             return T_COUT;} 
+
+
+
 
 "cin"	{   
             yylloc.first_line = yylloc.last_line;
@@ -139,6 +188,7 @@ SINGLE_COMMENT ;
             yylloc.last_column += yyleng -1;
 			return T_CIN;}
 
+"//".*?\n {}
 ">="    {   yylloc.first_line = yylloc.last_line;
             yylloc.first_column = ++yylloc.last_column;
             yylloc.last_column += yyleng -1;
@@ -152,7 +202,7 @@ SINGLE_COMMENT ;
 "=="    {   yylloc.first_line = yylloc.last_line;
             yylloc.first_column = ++yylloc.last_column;
             yylloc.last_column += yyleng -1;
-            return T__EQ;}
+            return T_EQ;}
             
 "!="    {   yylloc.first_line = yylloc.last_line;
             yylloc.first_column = ++yylloc.last_column;
@@ -162,19 +212,38 @@ SINGLE_COMMENT ;
 "||"    {   yylloc.first_line = yylloc.last_line;
             yylloc.first_column = ++yylloc.last_column;
             yylloc.last_column += yyleng -1;
-            return T__OR;
+            return T_OR;
         }
 
 "&&"    {   yylloc.first_line = yylloc.last_line;
             yylloc.first_column = ++yylloc.last_column;
             yylloc.last_column += yyleng -1;
-            return T__AND;}
+            return T_AND;}
+
+">>"  {     yylloc.first_line = yylloc.last_line;
+            yylloc.first_column = ++yylloc.last_column;
+            yylloc.last_column += yyleng -1;
+            return T_INS;}
+
+"<<"  {     yylloc.first_line = yylloc.last_line;
+            yylloc.first_column = ++yylloc.last_column;
+            yylloc.last_column += yyleng -1;
+            return T_EXT;}
+
+"++"  {     yylloc.first_line = yylloc.last_line;
+            yylloc.first_column = ++yylloc.last_column;
+            yylloc.last_column += yyleng -1;
+            return T_INC;}
+"--"  {     yylloc.first_line = yylloc.last_line;
+            yylloc.first_column = ++yylloc.last_column;
+            yylloc.last_column += yyleng -1;
+            return T_DEC;}
 
 
 {SINGLE_CHAR_OPERATORS} { yylloc.first_line = yylloc.last_line;
                           yylloc.first_column = ++yylloc.last_column;
                           yylloc.last_column += yyleng -1; 
-                          return atoi(*yytext); }
+                          return *yytext; }
 
 
 {CCONST}		 		{ yylloc.first_line = yylloc.last_line;
@@ -183,14 +252,17 @@ SINGLE_COMMENT ;
                           yylval.strval = strdup(yytext);
                           return T_CHAR_VAL;}
 
-{LETTER}({LETTER}|{DIGIT})*"\.h"?  { yylloc.first_line = yylloc.last_line;
+{LETTER}({LETTER}|{DIGIT})*"\.h"  { yylloc.first_line = yylloc.last_line;
                           yylloc.first_column = ++yylloc.last_column;
                           yylloc.last_column += yyleng -1;
                           yylval.strval = strdup(yytext);
                           return T_HEADER;} 
+                    
+{IDENTIFIER}		{   yylval.strval = strdup(yytext);
+						  return IDENTIFIER;}
 
                           
-{STRING}          { yylloc.first_line = yylloc.last_line;
+{STRING}          {       yylloc.first_line = yylloc.last_line;
                           yylloc.first_column = ++yylloc.last_column; 
                           yylloc.last_column += yyleng - 1; 
                           yylval.strval = strdup(yytext);
@@ -210,17 +282,11 @@ SINGLE_COMMENT ;
                           
 
 
-{IDENTIFIER}		{ yylval.strval = strdup(yytext);
-						  return T_IDENTIFIER;}
+
 
  /* Regex to remove comments */
 ^{IDENTIFIER}{1,31}$ { yyerror("Identifier length exceeded 31, truncated");} 
 
-.                       { yyerror("Invalid character"); }
+ /* .                       { yyerror("Invalid character"); } */
 
 %%
-
-int main(){
-    yylex();
-    return 0;
-}
