@@ -3,25 +3,28 @@
 void main()
 {
     /*while(x);  NOT WORKING - semicolon after while
-    
-    cout << "Type a number: ";  Difference between T STRING and T STRING VAL? for rule 'Output'
-    cin >> x ; Unexpected semicolon
-    switch(x)  ACCOMODATE blank switch case - case label, default and break are all optional
-    {
-
-    }
-    x++;  WHY DOESN'T Statements :Statements exp as a rule work? Gives shift reduce
     */
-
     
-    int x = 0;
-    while(x<3)
+    int x[5] = {1,2,3,4,5};
+    int y[2] = {1,2};
+    int y = 9;
+    y = y+8;
+    //x = 10e3; NOT WORKING
+    while(3)
     {
-        x=x+1;
+      printf("hi:)";
     }
-    
+   
+        switch(x)
+    {
+      case 10:
+        break;
+      case 1:
+        break;
 
+      case 0:
+        printf("Hi");
+        break;
+    }
 
-    
-    
 }

@@ -2,49 +2,29 @@
     #include<string.h>
     #include<stdio.h>
 
-    // int yylex();
-
-// typedef struct YYLTYPE
-// {
-//     int first_line;
-//     int first_column;
-//     int last_line;
-//     int last_column;
-//     char *filename; /* use to keep track of which file we're currently in */
-//     int hel;    /* no errors = 0, warning = 1, error = 2, fatal = 3 */
-// } YYLTYPE;
-
-
     #include "compiler.tab.h"
     extern void yyerror(const char *); 
+    unsigned int lineno = 0;
 
-    // int yylval;
-    // void yyerror(char *);
-	unsigned int lineno = 0;
-
-   // extern YYLTYPE yylloc;
-  //#define YYLTYPE * yylloc;
-   //#define YYSTYPE char * ;
-  //  #define YYSTYPE char*
-   
-    // #define YY_USER_INIT yylloc.first_line = 1;
     
 %}
 
+%option yylineno
+
 SINGLE_CHAR_OPERATORS "+"|"-"|"&"|"!"|"^"|"*"|","|"~"|";"|"/"|"="|"%"|">"|"<"|"."|"["|"]"|":"|"?"|"("|")"|"{"|"}"|"\""
-SINGLE_COMMENT	\/\/(.*)
-MULTI_COMMENT	\/\*(.*\n)*.*\*\/
-DIGIT 			[0-9]
-FRAC			(\.{DIGIT}+)?
-EXP				([Ee][+-]?{DIGIT}+)?
-NUMBER 			({DIGIT}+{FRAC}{EXP})
-LETTER			[a-zA-Z_]
-IDENTIFIER		[a-zA-Z_][a-zA-Z0-9_]*
-PRINT			[ -~]
-CCONST			(\'{PRINT}\')|(\'\\[nftrbv]\')
-STRING			\"[ -~]*\"
-ICONST			{DIGIT}+
-DOUBLE			({DIGIT}+(\.{DIGIT}+){EXP})
+SINGLE_COMMENT  \/\/(.*)
+MULTI_COMMENT \/\*(.*\n)*.*\*\/
+DIGIT       [0-9]
+FRAC      (\.{DIGIT}+)?
+EXP       ([Ee][+-]?{DIGIT}+)?
+NUMBER      ({DIGIT}+{FRAC}{EXP})
+LETTER      [a-zA-Z_]
+IDENTIFIER    [a-zA-Z_][a-zA-Z0-9_]*
+PRINT     [ -~]
+CCONST      (\'{PRINT}\')|(\'\\[nftrbv]\')
+STRING      \"[ -~]*\"
+ICONST      {DIGIT}+
+DOUBLE      ({DIGIT}+(\.{DIGIT}+)?{EXP})
 OPEN_MULTICOMMENT \/\* 
 CLOSE_MULTICOMMENT \*\/
 
@@ -58,226 +38,200 @@ SINGLE_COMMENT ;
 
 {OPEN_MULTICOMMENT}(.*\n)*.*{CLOSE_MULTICOMMENT} ;
 
-{OPEN_MULTICOMMENT}.* {yyerror("Unterminated Comment\n");}
+{OPEN_MULTICOMMENT}.* {yyerror("Unterminated Comment\n ");}
 
  /* Regex to truncate identifiers exceeding length 31 */
 
 
-[\n]            { yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column;
-                          yylloc.last_column = 0; 
-                          yylloc.first_line = lineno++;
+[\n]            {   
+                        yylineno ++;
+                          
                 }
 
-"main()"	        { yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+"main()"          {  
+                  printf("T_MAIN "); 
                   return T_MAIN; }
 
-"printf"	        { yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+"printf"          {   
+                  printf("T_PRINT ");
                   return T_PRINT; }
 
 
-"while"	{ 
-                  yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+"while" { 
+                  printf("T_WHILE ");
                   return T_WHILE; }
 
-"switch"	{ 
-                  yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+"switch"  { 
+                  printf("T_SWITCH ");
                   return T_SWITCH; }
-"default"	{ 
-                  yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+"default" { 
+                    
+                  printf("T_DEFAULT ");
                   return T_DEFAULT; }
 "case"    { 
-                  yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+                    
+                  printf("T_CASE ");
                   return T_CASE; }                  
                           
 "if"    { 
-                  yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+                    
+                  printf("T_IF ");
                   return T_IF; }
 
-"else"	{ 
-                  yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+"else"  { 
+                    
+                  printf("T_ELSE ");
                   return T_ELSE; }
 
 "#include" { 
-                  yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+                    
+                  printf("T_INCLUDE ");
                   return T_INCLUDE; }
 
 "int"     { 
-                          yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column;
-                          yylloc.last_column += yyleng -1; 
+                             
                           yylval.intval = T_INT;
+                          printf("T_INT ");
                           return T_INT; }
         
 "double"  { 
-                          yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column;
-                          yylloc.last_column += yyleng -1; 
+                             
                           yylval.intval = T_DOUBLE;
+                          printf("T_DOUBLE ");
                           return T_DOUBLE;}
            
 "bool"    { 
-                          yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column;
-                          yylloc.last_column += yyleng -1; 
+                             
                           yylval.intval = T_BOOL;
+                          printf("T_BOOL ");
                           return T_BOOL; }
          
 "char"    { 
-                          yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column;
-                          yylloc.last_column += yyleng -1; 
+                             
                           yylval.intval = T_CHAR;
+                          printf("T_CHAR ");
                           return T_CHAR; } 
 
-"string" { 	
-              yylloc.first_line = yylloc.last_line;
-            	yylloc.first_column = ++yylloc.last_column;
-           	  yylloc.last_column += yyleng -1; 
+"string" {   
                  yylval.intval = T_STRING;
-           	  return T_STRING;}
+                 printf("T_STRING ");
+              return T_STRING;}
 
-"void" { 	
-          yylloc.first_line = yylloc.last_line;
-          yylloc.first_column = ++yylloc.last_column;
-         	yylloc.last_column += yyleng -1; 
+"void" {  
+              
              yylval.intval = T_VOID;
-         	return T_VOID; 
+             printf("T_VOID ");
+          return T_VOID; 
 }
 
-"return" {  yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
-      		   return T_RETURN;
-	    }
+"return" {   
+             
+            printf("T_RETURN ");
+             return T_RETURN;
+      }
 "break"    { 
-                  yylloc.first_line = yylloc.last_line;
-                  yylloc.first_column = ++yylloc.last_column; 
-                  yylloc.last_column += yyleng - 1; 
+                    
+                  printf("T_BREAK ");
                   return T_BREAK; }
             
-"cout"  {   yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+"cout"  {    
+             
+            printf("T_COUT ");
             return T_COUT;} 
 
-
-
-
-"cin"	{   
-            yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
-			return T_CIN;}
+"cin" {   
+             
+             
+            printf("T_CIN ");
+      return T_CIN;}
 
 "//".*?\n {}
-">="    {   yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
-			return T_GE;}
+">="    {    
+             
+            printf("T_GE ");
+      return T_GE;}
 
-"<="    {   yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+"<="    {    
+             
+            printf("T_LE ");
             return T_LE;}
         
-"=="    {   yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+"=="    {    
+             
+            printf("T_EQ ");
             return T_EQ;}
             
-"!="    {   yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+"!="    {    
+             
+            printf("T_NE ");
             return T_NE;}
 
-"||"    {   yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+"||"    {    
+             
+            printf("T_OR ");
             return T_OR;
         }
 
-"&&"    {   yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+"&&"    {    
+             
+            printf("T_AND ");
             return T_AND;}
 
-">>"  {     yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+">>"  {      
+             
+            printf("T_INS ");
             return T_INS;}
 
-"<<"  {     yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+"<<"  {      
+             
+            printf("T_EXT ");
             return T_EXT;}
 
-"++"  {     yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+"++"  {      
+             
+            printf("T_INC ");
             return T_INC;}
-"--"  {     yylloc.first_line = yylloc.last_line;
-            yylloc.first_column = ++yylloc.last_column;
-            yylloc.last_column += yyleng -1;
+"--"  {      
+             
+            printf("T_DEC ");
             return T_DEC;}
 
 
-{SINGLE_CHAR_OPERATORS} { yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column;
-                          yylloc.last_column += yyleng -1; 
+{SINGLE_CHAR_OPERATORS} {    
                           return *yytext; }
 
 
-{CCONST}		 		{ yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column;
-                          yylloc.last_column += yyleng -1; 
+{CCONST}        {    
                           yylval.strval = strdup(yytext);
+                          printf("T_CHAR_VAL ");
                           return T_CHAR_VAL;}
 
-{LETTER}({LETTER}|{DIGIT})*"\.h"  { yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column;
-                          yylloc.last_column += yyleng -1;
+{LETTER}({LETTER}|{DIGIT})*"\.h"  {   
                           yylval.strval = strdup(yytext);
+                          printf("T_HEADER ");
                           return T_HEADER;} 
                     
-{IDENTIFIER}		{   yylval.strval = strdup(yytext);
-						  return IDENTIFIER;}
+{IDENTIFIER}    { yylval.strval = strdup(yytext);
+                        printf("IDENTIFIER ");
+              return IDENTIFIER;}
 
                           
-{STRING}          {       yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column; 
-                          yylloc.last_column += yyleng - 1; 
+{STRING}          {  
+                            
                           yylval.strval = strdup(yytext);
+                          printf("T_STRING_VAL ");
                           return T_STRING_VAL;}
 
-{ICONST}            { yylloc.first_line = yylloc.last_line;
-                     yylloc.first_column = ++yylloc.last_column; 
-                          yylloc.last_column += yyleng - 1; 
+{ICONST}            {  
+                       
                           yylval.strval = strdup(yytext);
+                          printf("T_INTEGER_VAL ");
                           return T_INTEGER_VAL;}
 
-{DOUBLE}        { yylloc.first_line = yylloc.last_line;
-                          yylloc.first_column = ++yylloc.last_column; 
-                          yylloc.last_column += yyleng - 1; 
+{DOUBLE}        {  
+                            
                           yylval.strval = strdup(yytext);
+                          printf("T_FLOAT_VAL ");
                           return T_FLOAT_VAL;}
                           
 
@@ -285,8 +239,8 @@ SINGLE_COMMENT ;
 
 
  /* Regex to remove comments */
-^{IDENTIFIER}{1,31}$ { yyerror("Identifier length exceeded 31, truncated");} 
+^{IDENTIFIER}{1,31}$ { yyerror("Identifier length exceeded 31, truncated ");} 
 
- /* .                       { yyerror("Invalid character"); } */
+ /* .                       { yyerror("Invalid character "); } */
 
 %%
