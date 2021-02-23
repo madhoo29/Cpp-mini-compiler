@@ -3,21 +3,21 @@
     #include<stdlib.h>
     #include "symboltable.c"
 
-     int yylex();
-    
+    int yylex();
+    extern int yylineno;
     int scope = 0;
+    int err;
     int type;
 
-void yyerror(const char* s)
+void yyerror(const char *str)
 {
-  printf( "%s\n",s);
-  exit(1);
+    fprintf(stderr,"Error at line: %d %s\n",yylineno,str);
 }
 
 
 
 %}
-
+%locations
 %token T_MAIN T_WHILE T_IF T_ELSE T_INCLUDE T_HEADER T_SWITCH T_CASE T_PRINT
 %token T_INT T_DOUBLE T_BOOL T_CHAR T_STRING T_VOID  
 %token T_COUT T_CIN T_EXT T_INS T_BREAK T_DEFAULT
@@ -26,11 +26,15 @@ void yyerror(const char* s)
 
 %error-verbose
 
-%left ','
-%left '+' '-'
-%left '*' '/'
-%left '<' '>'
+
 %right '='
+%left T_LOGICAL_OR
+%left T_LOGICAL_AND
+%left T_EQ T_NOT_EQ
+%left '<' '>' T_LS_EQ T_GR_EQ
+%left '+' '-'
+%left '*' '/' '%'
+%right '!'
 
  /* ADD THESE */
 %token T_INC T_DEC
@@ -49,12 +53,15 @@ void yyerror(const char* s)
 BEGIN: preproc 
 	;
 
-preproc: T_INCLUDE '<' T_HEADER '>'  preproc
+ /*preproc: T_INCLUDE '<' T_HEADER '>'  preproc
       | T_INCLUDE  "\"" T_HEADER "\""  preproc
+      | main
+      ;*/
+preproc: T_INCLUDE  T_HEADER   preproc
       | main
       ;
 
-main: T_INT T_MAIN compound_stmt {printf("line number%d",@1.last_line);}
+main: T_INT T_MAIN compound_stmt 
       | T_VOID T_MAIN compound_stmt 
       | 
       ;
@@ -63,7 +70,7 @@ stmt:compound_stmt
     ;
 
  /* The function body is covered in braces and has multiple statements. */
-compound_stmt :'{'  statements '}'  
+compound_stmt :'{' {scope++;enter_scope(scope); } statements '}'  {exit_scope(scope + 1); scope--;} 
     ;
 
 statements:statements stmt
@@ -81,27 +88,34 @@ single_stmt: While
     | Output 
     | increment
     | decrement
+    | T_BREAK ';'
     ;
 
 
 
 // just ; inside case doesn't work
 S : Decleration S 
-        | While S     {printf("while\n");}
+        | While S    
         | Assignment S
-        | Return  S{printf("returned\n");}
-        | Print S{printf("called\n");}
-        | Switch S {printf("second\n");}
+        | Return  S
+        | Print S
+        | Switch S 
+        | T_BREAK ';' S
         |
         ;
 
 Print : T_PRINT '(' T_STRING_VAL ')' ';'
         
-Decleration : Type IDENTIFIER '=' exp ';' { lookup($2,scope, $1, @2.first_line); 
-                                            check($2,scope,@2.first_line,$4);  
-                                            printf("Decleration : %d\n", @2.first_line);}  
+Decleration : Type IDENTIFIER '=' exp ';' { 
+                                            err = lookup($2,scope, $1, @2.first_line); 
+                                            if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$2);
+                                            else{
+                                            err = check($2,scope,@2.first_line,$4);  
+                                            if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$2);
+                                            }
+                                            }  
         
-        | Type Listvariables ';' {printf("decl line number%d",@1.first_line);}
+        | Type Listvariables ';'
         | ArrayDec 
         ;
 
@@ -113,11 +127,20 @@ ArrayObj : consttype
         | 
         ;
 
-Listvariables : Listvariables ',' IDENTIFIER {lookup($3,scope, type, @3.first_line);check($3,scope,@3.first_line,"0"); }
-        | IDENTIFIER {printf("hi %s %d %d %d\n", $1, scope, type, @1.first_line);lookup($1,scope, type, @1.first_line);check($1,scope,@1.first_line,"0"); }
+Listvariables : Listvariables ',' IDENTIFIER {err = lookup($3,scope, type, @3.first_line);
+                                                if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$3);
+                                                else{
+                                                err = check($3,scope,@3.first_line,"0");
+                                                if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$3); }}
+        | IDENTIFIER {
+                        err = lookup($1,scope, type, @1.first_line);
+                        if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$1);
+                        else{
+                        err = check($1,scope,@1.first_line,"0");
+                        if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$1); }}
         ;
-Assignment : IDENTIFIER '=' exp ';' {check($1,scope, @1.first_line, $3); printf("assignment : %d\n", @1.first_line);}
-        | IDENTIFIER '[' T_INTEGER_VAL ']' '=' consttype ';' {check($1,scope, @1.first_line, $6); printf("assignment : %d\n", @1.first_line);}
+Assignment : IDENTIFIER '=' exp ';' {check($1,scope, @1.first_line, $3); }
+        | IDENTIFIER '[' T_INTEGER_VAL ']' '=' consttype ';' {check($1,scope, @1.first_line, $6); }
         ;
         
 Input : T_CIN T_INS IDENTIFIER ';'
@@ -131,7 +154,7 @@ exp : '(' exp ')' {$$ = $2;}
 	| exp '-' exp {}
 	| exp '*' exp {}
 	| exp '/' exp {}
-    | IDENTIFIER {check($1,scope, @1.first_line,"hi"); printf("simple IDENTIFIER\n"); $$ = $1;}
+    | IDENTIFIER {check($1,scope, @1.first_line,"hi"); $$ = $1;}
     | consttype {$$ = $1;}
 	;
 
@@ -157,12 +180,12 @@ consttype : T_INTEGER_VAL
 
 
 Return : T_RETURN IDENTIFIER ';'
-    | T_RETURN consttype ';' {printf("return\n");}
+    | T_RETURN consttype ';' 
     | T_RETURN ';' 
     ;
 
 
-While : T_WHILE '(' check ')' compound_stmt {printf("line number%d",@1.first_line);}
+While : T_WHILE '(' check ')' compound_stmt 
 	;
     
 check : consttype 
@@ -175,22 +198,22 @@ check : consttype
 relop : '<' | '>' | T_NE | T_EQ ; 
 
 
-Switch : T_SWITCH '(' exp ')' '{' Cases '}' {printf("switch\n");}
+Switch : T_SWITCH '(' exp ')' '{' Cases '}' 
 ;
 
 Cases : Case
     | Case Default
 ;
 
-Case : C {printf("inside2\n");}
-    | Case C {printf("inside\n");}
+Case : C 
+    | Case C 
 ;
 
 break : T_BREAK ';'
     | 
     ;
-C : T_CASE consttype ':' S break {printf("case\n");}
-    | T_CASE consttype ':' ';' break {printf("case\n");}
+C : T_CASE consttype ':' S 
+    | T_CASE consttype ':' ';' break 
     ;
 
 Default : T_DEFAULT ':' S 

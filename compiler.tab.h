@@ -72,13 +72,18 @@
      T_INTEGER_VAL = 288,
      T_STRING_VAL = 289,
      IDENTIFIER = 290,
-     T_INC = 291,
-     T_DEC = 292,
-     T_TRUE = 293,
-     T_FALSE = 294,
-     T_RETURN = 295,
-     T_CONST = 296,
-     T_AUTO = 297
+     T_LOGICAL_OR = 291,
+     T_LOGICAL_AND = 292,
+     T_NOT_EQ = 293,
+     T_GR_EQ = 294,
+     T_LS_EQ = 295,
+     T_INC = 296,
+     T_DEC = 297,
+     T_TRUE = 298,
+     T_FALSE = 299,
+     T_RETURN = 300,
+     T_CONST = 301,
+     T_AUTO = 302
    };
 #endif
 
@@ -89,12 +94,12 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 46 ".\\compiler.y"
+#line 50 ".\\compiler.y"
 int intval; char* strval;
 
 
 /* Line 1676 of yacc.c  */
-#line 98 "compiler.tab.h"
+#line 103 "compiler.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

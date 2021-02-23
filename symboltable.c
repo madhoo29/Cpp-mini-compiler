@@ -6,7 +6,7 @@
 
 typedef struct SYM{
 	char* name;
-	int value;
+	char* value;
 	int line;
 	int used_lines[10];
 	int declared;
@@ -24,17 +24,27 @@ scope_head* table[20]; //stack
 int i = 0; //stack pointer
 
 void display(){
-	scope_head* temp = table[i];
-	int c = i;
-	while(c >= 0){
+	printf("NAME\tTYPE\tVALUE\tLINE\tSCOPE\n");
+	scope_head* temp = table[i-1];
+	int c = i - 1;
+	// while(c >= 0){
 		sym* node = temp->vars;
 		while(node != NULL){
-			printf("%s %d\n",node->name, c);
+			char* type;
+			//printf("start %d\n", node->type);
+			switch (node->type){
+				case 1: type = "int"; printf("%s\t%s\t%d\t%d\t%d\n",node->name, type, atoi(node->value), node->line, c); break;
+				case 2: type = "double"; printf("%s\t%s\t%f\t%d\t%d\n",node->name, type, atof(node->value), node->line, c); break; 
+				case 3: type = "void"; printf("%s\t%s\tVOID\t%d\t%d\n",node->name, type, node->line, c); break; 
+				case 4: type = "char"; printf("%s\t%s\t%c\t%d\t%d\n",node->name, type, *(node->value+1), node->line, c);  break;
+				case 5: type = "string"; printf("%s\t%s\t%s\t%d\t%d\n",node->name, type, (node->value), node->line, c); break;
+			}
 			node = node->next;
 		}
-		c--;
-		temp = table[c];
-	}
+
+		// c--;
+		// temp = table[c];
+	// }
 }
 
 sym* create_var(char* name, int line, int type){
@@ -42,7 +52,7 @@ sym* create_var(char* name, int line, int type){
 	new->name = (char*)malloc(sizeof(char) * strlen(name));
 	strcpy(new->name, name);
 	new->line = line;
-	new->value = INT_MIN;
+	new->value = NULL;
 	new->num = 0;
 	new->declared;
 	new->type = type;
@@ -57,45 +67,57 @@ void push(scope_head* node){
 }
 
 void pop(){
-	if(table[i]->vars == NULL){
+	display();
+	if(table[i - 1]->vars == NULL){
 		free(table[i--]);
 		return;
 	}
-	if(table[i]->vars->next == NULL){
-		free(table[i]->vars->next);
-		free(table[i]->vars);
+	if(table[i - 1]->vars->next == NULL){
+		free(table[i - 1]->vars->next);
+		free(table[i - 1]->vars);
 	}
 	else{
-		sym* temp = table[i]->vars->next;
-		sym* prev = table[i]->vars;
+		sym* temp = table[i - 1]->vars->next;
+		sym* prev = table[i - 1]->vars;
 		while(temp != NULL){
 			prev->next = temp->next;
 			free(temp);
 			temp = prev->next;
 		}
-		free(table[i]->vars);
+		free(table[i - 1]->vars);
 	}
 	free(table[i--]);
 }
 
 int lookup(char* name, int scope, int type, int line){ // declarations only
-	if(scope == table[i]->scope){
-		sym* temp = table[i]->vars;
-		while(temp != NULL && temp->next != NULL){
+	if(scope == table[i - 1]->scope){
+		sym* temp = table[i - 1]->vars;
+		while(temp != NULL){
 			if(strcmp(temp->name, name) == 0){
-				// yyerror("Redeclaration of variable %s", name);
 				return 0; // redeclaration error
 			}
 			temp = temp->next;
 		}
 		sym* new = create_var(name,line,type);
+		new->name = name;
+		new->type = type;
+		//printf("lname : %s\n", name);
 		new->declared = line;
-		if(temp == NULL)
-			table[i]->vars = new;
+		new->value = NULL;
+		new->line = line;
+		if(temp == NULL){
+			new->next = table[i - 1]->vars;
+			table[i - 1]->vars = new;
+		}
 		else
 			temp->next = new;
 		return 1; // no error
 	}
+	
+	// scope_head* node = (scope_head*)malloc(sizeof(scope_head));
+	// node->scope = scope;
+	// node->vars = NULL;
+	// push(node);
 }
 
 #if 0
@@ -119,14 +141,16 @@ int check(char* name, int scope, int line, int value){ // usage
 }
 #endif
 
-int check(char* name, int scope, int line){ // usage 
-	int index = i;
-	while(index > 0){
+int check(char* name, int scope, int line, char* value){ // usage 
+	int index = i - 1;
+	while(index >= 0){
 		sym* temp = table[index]->vars;
-		while(temp != NULL && temp->next != NULL){
+		while(temp != NULL){
 			if(strcmp(temp->name, name) == 0){
-				// yyerror("Redeclaration of variable %s", name);
 				temp->used_lines[temp->num++] = line;
+				temp->value = value;
+				// printf("name : %s\n", temp->value);
+
 				return 1; // no error
 			}
 			temp = temp->next;
@@ -137,20 +161,41 @@ int check(char* name, int scope, int line){ // usage
 }	
 
 void enter_scope(int scope){
-	display();
 	scope_head* new = (scope_head*)malloc(sizeof(scope_head));
 	new->vars = NULL;
 	new->scope = scope;
 	push(new);
+	//display();
 }
 
 void exit_scope(int scope){
-	display();
-	if(table[i]->scope == scope)
 		pop();
-	else
-		printf("unidentified error\n");
+
+		//printf("unidentified error\n");
 }
+
+void init(){
+	int n = 0;
+	for(int n = 0; n < 20; ++n){
+		table[i] = NULL;
+	}
+	enter_scope(0);
+}
+
+#if 0
+int main(){
+	//init();
+	char* type;
+	type = "int";
+	printf("%s",type);
+	printf("done\n");
+	enter_scope(0);
+	printf("done2\n");
+	lookup("ab",0,1,4);
+	check("ab",0,3,"0");
+	display();
+}
+#endif
 
 
 
