@@ -21,7 +21,10 @@ LETTER      [a-zA-Z_]
 IDENTIFIER    (_|{LETTER})({LETTER}|{DIGIT}|_)*
 PRINT     [ -~]
 CCONST      (\'{PRINT}\')|(\'\\[nftrbv]\')
-STRING      \"[^\"]*\"
+/* CCONST      \'[a-zA-Z0-9]\'*/
+STRING_TERMINATE ('\0')
+STRING      \"[^\"\n]*\"
+NOT_STRING      \"[^\"]*[\n][^\"]*\"
 ICONST      {DIGIT}+
 DOUBLE      ({DIGIT}+(\.{DIGIT}+){EXP})
 OPEN_MULTICOMMENT \/\* 
@@ -33,7 +36,7 @@ CLOSE_MULTICOMMENT \*\/
 
 [ \t] {}
 
-{SINGLE_COMMENT}[^ \n]* {;}
+{SINGLE_COMMENT}[^\n]* {;}
 
 {OPEN_MULTICOMMENT}(.*\n)*.*{CLOSE_MULTICOMMENT} ;
 
@@ -42,76 +45,83 @@ CLOSE_MULTICOMMENT \*\/
  /* Regex to truncate identifiers exceeding length 31 */
 
 
-[\n]            {}
-[ \t\r\f\v]+    {}
 
-"main()"        { fprintf(ptr,T_MAIN);
+"main()"        { printf("%s\n","T_MAIN");
                   return T_MAIN; }
 
-"printf"        { fprintf(ptr,"T_PRINT");
+"printf"        { printf("%s\n","T_PRINT");
                   return T_PRINT; }
 
 
-"while"         { fprintf(ptr,"T_WHILE");
+"while"         { printf("%s\n","T_WHILE");
                   return T_WHILE; }
 
-"switch"  { fprintf(ptr,"T_SWITCH");
+"switch"  { printf("%s\n","T_SWITCH");
             return T_SWITCH; }
-"default" { fprintf(ptr,"T_DEFAULT");
+"default" { printf("%s\n","T_DEFAULT");
             return T_DEFAULT; }
-"case"    { fprintf(ptr,"T_CASE");
+"case"    { printf("%s\n","T_CASE");
             return T_CASE; }                  
                           
-"if"    { fprintf(ptr,"T_IF");
+"if"    { printf("%s\n","T_IF");
           return T_IF; }
 
-"else"  { fprintf(ptr,"T_ELSE");
+"else"  { printf("%s\n","T_ELSE");
           return T_ELSE; }
 
-"#include" { fprintf(ptr,"T_INCLUDE"); return T_INCLUDE; }
+"#include" { printf("%s\n","T_INCLUDE"); return T_INCLUDE; }
 
-"int"     { fprintf(ptr,"T_INT"); return T_INT; }
+"class"   { printf("%s\n","T_CLASS"); return T_CLASS; }
+
+"public"  { printf("%s\n","T_PUBLIC"); return T_PUBLIC; }
+
+"private" { printf("%s\n","T_PRIVATE"); return T_PRIVATE; }
+
+"protected"   { printf("%s\n","T_PROTECTED"); return T_PROTECTED; }
+
+"int"     { printf("%s\n","T_INT"); return T_INT; }
         
-"double"  { fprintf(ptr,"T_DOUBLE"); return T_DOUBLE;}
+"double"  { printf("%s\n","T_DOUBLE"); return T_DOUBLE;}
            
-"bool"    { fprintf(ptr,"T_BOOL"); return T_BOOL; }
+"bool"    { printf("%s\n","T_BOOL"); return T_BOOL; }
          
-"char"    { fprintf(ptr,"T_CHAR"); return T_CHAR; } 
+"char"    { printf("%s\n","T_CHAR"); return T_CHAR; } 
 
-"string" { fprintf(ptr,"T_STRING"); return T_STRING;}
+"string" { printf("%s\n","T_STRING"); return T_STRING;}
 
-"void" {  fprintf(ptr,"T_VOID"); return T_VOID; 
+"void" {  printf("%s\n","T_VOID"); return T_VOID; 
 }
 
-"return" { fprintf(ptr,"T_RETURN"); return T_RETURN;
+"return" { printf("%s\n","T_RETURN"); return T_RETURN;
       }
-"break"    { fprintf(ptr,"T_BREAK"); return T_BREAK; }
+"break"    { printf("%s\n","T_BREAK"); return T_BREAK; }
             
-"cout"  { fprintf(ptr,"T_COUT"); return T_COUT;} 
+"cout"  { printf("%s\n","T_COUT"); return T_COUT;} 
 
-"cin" {fprintf(ptr,"T_CIN"); return T_CIN;}
+"cin" {printf("%s\n","T_CIN"); return T_CIN;}
 
 "//".*?\n {}
-">="    { fprintf(ptr,"T_GE"); return T_GE;}
+">="    { printf("%s\n","T_GE"); return T_GE;}
 
-"<="    { fprintf(ptr,"T_LE"); return T_LE;}
+"<="    { printf("%s\n","T_LE"); return T_LE;}
         
-"=="    { fprintf(ptr,"T_EQ"); return T_EQ;}
+"=="    { printf("%s\n","T_EQ"); return T_EQ;}
             
-"!="    { fprintf(ptr,"T_NE"); return T_NE;}
+"!="    { printf("%s\n","T_NE"); return T_NE;}
 
-"||"    { fprintf(ptr,"T_OR"); return T_OR; }
+"||"    { printf("%s\n","T_OR"); return T_OR; }
 
-"&&"    { fprintf(ptr,"T_AND"); return T_AND;}
+"&&"    { printf("%s\n","T_AND"); return T_AND;}
 
-">>"  { fprintf(ptr,"T_INS"); return T_INS;}
+">>"  { printf("%s\n","T_INS"); return T_INS;}
 
-"<<"  { fprintf(ptr,"T_EXT"); return T_EXT;}
+"<<"  { printf("%s\n","T_EXT"); return T_EXT;}
 
-"++"  { fprintf(ptr,"T_INC"); return T_INC;}
-"--"  { fprintf(ptr,"T_DEC"); return T_DEC;}
+"++"  { printf("%s\n","T_INC"); return T_INC;}
+"--"  { printf("%s\n","T_DEC"); return T_DEC;}
 
-{IDENTIFIER}    { if (strlen(yytext) > 31){
+{IDENTIFIER}    { printf("%s\n","T_IDENTIFIER");
+  if (strlen(yytext) > 31){
                   yyerror("Identifier length exceeded 31, truncated.\n ");
                   char* new = (char*)malloc(31 * sizeof(char));
                   for(int i = 0; i < 30; i++){
@@ -126,46 +136,46 @@ CLOSE_MULTICOMMENT \*\/
     }
 
 {CCONST}        {
-                  fprintf(ptr,"T_CHAR_VAL");
+                  printf("%s\n","T_CHAR_VAL");
                     yylval.strval = strdup(yytext);
                     return T_CHAR_VAL;}
 
 (<|\"){LETTER}({LETTER}|{DIGIT})*"\.h"(>|\")  { 
-                          fprintf(ptr,"T_HEADER");
+                          printf("%s\n","T_HEADER");
                           yylval.strval = strdup(yytext);
                           return T_HEADER;} 
                     
 
 
-{STRING}          {       fprintf(ptr,"T_STRING_VAL");
+{STRING}          {       printf("%s\n","T_STRING_VAL");
                           yylval.strval = strdup(yytext);
                           return T_STRING_VAL;}
 
+{NOT_STRING}      { yyerror("String with erroneous newline") ;
+                          yylval.strval = " ";
+                          return T_STRING_VAL;}
+
+
 \"[^\"\n]*$       {yyerror("Unterminated string");}
 
- 
 
 {ICONST}            { 
                           yylval.strval = strdup(yytext);
-                          fprintf(ptr,"T_INTEGER_VAL");    
+                          printf("%s\n","T_INTEGER_VAL");    
                           return T_INTEGER_VAL;}
 
-{DOUBLE}            {
-                          yylval.strval = strdup(yytext);
-                          fprintf(ptr,"T_FLOAT_VAL");
+{DOUBLE}           {      
+                          yylval.strval = strdup(yytext); 
                           return T_FLOAT_VAL;}
             
-{SINGLE_CHAR_OPERATORS} { return *yytext; }
+{SINGLE_CHAR_OPERATORS} {return *yytext; }
 
 ({DIGIT})+({LETTER}|_)+ {yyerror("Illegal identifier name");}
 
-
-.                       {ECHO; yyerror("unexpected character");}
+[\n]            {}
+[ \t\r\f\v]+    {}
+.                       {ECHO;
+            printf("char = %s\n",yytext); yyerror("unexpected character");}
 
 
 %%
-
-int main()
-{
-    FILE* ptr= fopen("tokens.txt","w");
-}

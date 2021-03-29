@@ -1,0 +1,120 @@
+NAME	TYPE	VALUE	LINE	SCOPE
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+d	int	10	12	1
+h	int*	4 0 0 0 0 	9	1
+l	int*	1 	7	1
+k	int*	0 0 0 0 0 0 0 0 0 0 	6	1
+c	int	0	5	1
+b	int	0	5	1
+a	int	20	5	1
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+d	int	10	12	1
+h	int*	4 0 0 0 0 	9	1
+l	int*	1 	7	1
+k	int*	0 0 0 0 0 0 0 0 0 0 	6	1
+c	int	0	5	1
+b	int	0	5	1
+a	int	20	5	1
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+d	int	10	12	1
+h	int*	4 0 0 0 0 	9	1
+l	int*	1 	7	1
+k	int*	0 0 0 0 0 0 0 0 0 0 	6	1
+c	int	0	5	1
+b1	int	0	5	1
+a1	int	0	5	1
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+d	int	10	12	1
+h	int*	4 0 0 0 0 	9	1
+l	int*	1 	7	1
+k	int*	0 0 0 0 0 0 0 0 0 0 	6	1
+c	int	0	5	1
+b	int	0	5	1
+a	int	20	5	1
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+d	int	10	12	1
+h	int*	4 0 0 0 0 	9	1
+l	int*	1 	7	1
+k	int*	0 0 0 0 0 0 0 0 0 0 	6	1
+c	int	0	5	1
+b	int	0	5	1
+a	int	20	5	1
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+e	int	0	13	1
+d	int	10	12	1
+h	int*	4 0 0 0 0 	9	1
+l	int*	1 	7	1
+k	int*	0 0 0 0 0 0 0 0 0 0 	6	1
+c	int	0	5	1
+b	int	0	5	1
+a	int	20	5	1
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+e	int	0	13	1
+d	int	10	12	1
+h	int*	4 0 0 0 0 	9	1
+l	int*	1 	7	1
+k	int*	0 0 0 0 0 0 0 0 0 0 	6	1
+c	int	0	5	1
+b	int	0	5	1
+a	int	0	5	1
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+
+
+
+NAME	TYPE	VALUE	LINE	SCOPE
+new_variable	double	2.300000	15	1
+e	int	0	13	1
+d	int	10	12	1
+h	int*	4 0 0 0 0 	9	1
+l	int*	1 	7	1
+k	int*	0 0 0 0 0 0 0 0 0 0 	6	1
+c	int	0	5	1
+b	int	0	5	1
+a	int	20	5	1
+
+
+

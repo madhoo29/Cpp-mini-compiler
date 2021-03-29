@@ -1,0 +1,2214 @@
+Terminals unused in grammar
+
+    T_IF
+    T_ELSE
+    T_BOOL
+    STRING_TERMINATE
+    T_GE
+    T_LE
+    T_OR
+    T_AND
+    T_NEWLINE
+    NOT_STRING
+    T_LOGICAL_OR
+    T_LOGICAL_AND
+    T_NOT_EQ
+    T_LS_EQ
+    T_GR_EQ
+    '%'
+    '!'
+    T_CONST
+    T_AUTO
+
+
+Grammar
+
+    0 $accept: BEGIN $end
+
+    1 BEGIN: preproc
+
+    2 preproc: T_INCLUDE T_HEADER preproc
+    3        | T_INCLUDE T_HEADER Functions
+
+    4 Functions: cf main
+
+    5 cf: cf Function_Dec
+    6   | cf Class
+    7   | cf Decleration
+    8   | %empty
+
+    9 main: T_INT T_MAIN compound_stmt
+   10     | T_VOID T_MAIN compound_stmt
+   11     | %empty
+
+   12 statements: statements stmt
+   13           | %empty
+
+   14 stmt: compound_stmt
+   15     | single_stmt
+
+   16 $@1: %empty
+
+   17 compound_stmt: '{' $@1 statements '}'
+
+   18 single_stmt: While
+   19            | Decleration
+   20            | Switch
+   21            | Assignment
+   22            | Print
+   23            | Return
+   24            | Input
+   25            | Output
+   26            | increment
+   27            | decrement
+   28            | T_BREAK ';'
+   29            | Class
+   30            | access
+   31            | Function_call
+   32            | ';'
+
+   33 Class: T_CLASS IDENTIFIER compound_stmt ';'
+
+   34 access: T_PUBLIC ':'
+   35       | T_PRIVATE ':'
+   36       | T_PROTECTED ':'
+
+   37 Function_Dec: Type IDENTIFIER '(' Parameters ')' compound_stmt
+
+   38 Parameters: Type IDENTIFIER Parameters
+   39           | ',' Parameters
+   40           | %empty
+
+   41 Function_call: IDENTIFIER '(' Arguments ')' ';'
+
+   42 Arguments: Arguments ',' exp
+   43          | exp
+
+   44 Print: T_PRINT '(' T_STRING_VAL ')' ';'
+
+   45 Decleration: Type IDENTIFIER '=' exp ';'
+   46            | Type Listvariables ';'
+   47            | ArrayDec
+
+   48 ArrayDec: Type IDENTIFIER '[' exp ']' ';'
+
+   49 $@2: %empty
+
+   50 ArrayDec: Type IDENTIFIER '[' exp ']' $@2 '=' '{' ArrayObj '}' ';'
+
+   51 ArrayObj: ArrayObj ',' Arraytype
+   52         | Arraytype
+   53         | %empty
+
+   54 Arraytype: T_INTEGER_VAL
+   55          | T_CHAR_VAL
+
+   56 Listvariables: Listvariables ',' IDENTIFIER
+   57              | IDENTIFIER
+
+   58 Assignment: IDENTIFIER '=' exp ';'
+   59           | IDENTIFIER '[' T_INTEGER_VAL ']' '=' consttype ';'
+
+   60 Input: T_CIN T_INS IDENTIFIER ';'
+
+   61 Output: T_COUT T_EXT T_STRING_VAL ';'
+
+   62 exp: exp '+' TERM
+   63    | exp '-' TERM
+   64    | TERM
+
+   65 TERM: TERM '*' FACTOR
+   66     | TERM '/' FACTOR
+   67     | FACTOR
+
+   68 FACTOR: Literal
+   69       | Literal T_INC
+   70       | Literal T_DEC
+
+   71 Literal: IDENTIFIER
+   72        | consttype
+
+   73 consttype: T_INTEGER_VAL
+   74          | T_FLOAT_VAL
+   75          | T_CHAR_VAL
+   76          | T_STRING_VAL
+
+   77 increment: IDENTIFIER T_INC ';'
+   78          | T_INC IDENTIFIER ';'
+
+   79 decrement: IDENTIFIER T_DEC ';'
+   80          | T_DEC IDENTIFIER
+
+   81 Type: T_INT
+   82     | T_DOUBLE
+   83     | T_VOID
+   84     | T_CHAR
+   85     | T_STRING
+
+   86 Return: T_RETURN IDENTIFIER ';'
+   87       | T_RETURN consttype ';'
+   88       | T_RETURN ';'
+
+   89 While: T_WHILE '(' check ')' compound_stmt
+
+   90 check: consttype
+   91      | IDENTIFIER
+   92      | exp relop exp
+   93      | T_TRUE
+   94      | T_FALSE
+
+   95 relop: '<'
+   96      | '>'
+   97      | T_NE
+   98      | T_EQ
+
+   99 Switch: T_SWITCH '(' exp ')' '{' Cases '}'
+
+  100 Cases: Case
+  101      | Case Default
+
+  102 Case: C
+  103     | Case C
+
+  104 C: T_CASE consttype ':' statements T_BREAK ';'
+
+  105 Default: T_DEFAULT ':' statements
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    '!' (33)
+    '%' (37)
+    '(' (40) 37 41 44 89 99
+    ')' (41) 37 41 44 89 99
+    '*' (42) 65
+    '+' (43) 62
+    ',' (44) 39 42 51 56
+    '-' (45) 63
+    '/' (47) 66
+    ':' (58) 34 35 36 104 105
+    ';' (59) 28 32 33 41 44 45 46 48 50 58 59 60 61 77 78 79 86 87 88 104
+    '<' (60) 95
+    '=' (61) 45 50 58 59
+    '>' (62) 96
+    '[' (91) 48 50 59
+    ']' (93) 48 50 59
+    '{' (123) 17 50 99
+    '}' (125) 17 50 99
+    error (256)
+    T_MAIN (258) 9 10
+    T_WHILE (259) 89
+    T_IF (260)
+    T_ELSE (261)
+    T_INCLUDE (262) 2 3
+    T_HEADER (263) 2 3
+    T_SWITCH (264) 99
+    T_CASE (265) 104
+    T_PRINT (266) 44
+    T_INT <intval> (267) 9 81
+    T_DOUBLE <intval> (268) 82
+    T_BOOL <intval> (269)
+    T_CHAR <intval> (270) 84
+    T_STRING <intval> (271) 85
+    T_VOID <intval> (272) 10 83
+    STRING_TERMINATE (273)
+    T_COUT (274) 61
+    T_CIN (275) 60
+    T_EXT (276) 61
+    T_INS (277) 60
+    T_BREAK (278) 28 104
+    T_DEFAULT (279) 105
+    T_GE (280)
+    T_LE (281)
+    T_EQ (282) 98
+    T_NE (283) 97
+    T_OR (284)
+    T_AND (285)
+    T_NEWLINE (286)
+    T_CHAR_VAL <strval> (287) 55 75
+    T_FLOAT_VAL <strval> (288) 74
+    T_INTEGER_VAL <strval> (289) 54 59 73
+    T_STRING_VAL <strval> (290) 44 61 76
+    IDENTIFIER <strval> (291) 33 37 38 41 45 48 50 56 57 58 59 60 71 77 78 79 80 86 91
+    NOT_STRING (292)
+    T_LOGICAL_OR (293)
+    T_LOGICAL_AND (294)
+    T_NOT_EQ (295)
+    T_LS_EQ (296)
+    T_GR_EQ (297)
+    T_INC (298) 69 77 78
+    T_DEC (299) 70 79 80
+    T_TRUE (300) 93
+    T_FALSE (301) 94
+    T_RETURN (302) 86 87 88
+    T_CONST (303)
+    T_AUTO (304)
+    T_CLASS (305) 33
+    T_PRIVATE (306) 35
+    T_PUBLIC (307) 34
+    T_PROTECTED (308) 36
+
+
+Nonterminals, with rules where they appear
+
+    $accept (72)
+        on left: 0
+    BEGIN (73)
+        on left: 1
+        on right: 0
+    preproc (74)
+        on left: 2 3
+        on right: 1 2
+    Functions (75)
+        on left: 4
+        on right: 3
+    cf (76)
+        on left: 5 6 7 8
+        on right: 4 5 6 7
+    main (77)
+        on left: 9 10 11
+        on right: 4
+    statements (78)
+        on left: 12 13
+        on right: 12 17 104 105
+    stmt (79)
+        on left: 14 15
+        on right: 12
+    compound_stmt (80)
+        on left: 17
+        on right: 9 10 14 33 37 89
+    $@1 (81)
+        on left: 16
+        on right: 17
+    single_stmt (82)
+        on left: 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
+        on right: 15
+    Class (83)
+        on left: 33
+        on right: 6 29
+    access (84)
+        on left: 34 35 36
+        on right: 30
+    Function_Dec (85)
+        on left: 37
+        on right: 5
+    Parameters (86)
+        on left: 38 39 40
+        on right: 37 38 39
+    Function_call (87)
+        on left: 41
+        on right: 31
+    Arguments (88)
+        on left: 42 43
+        on right: 41 42
+    Print (89)
+        on left: 44
+        on right: 22
+    Decleration (90)
+        on left: 45 46 47
+        on right: 7 19
+    ArrayDec (91)
+        on left: 48 50
+        on right: 47
+    $@2 (92)
+        on left: 49
+        on right: 50
+    ArrayObj (93)
+        on left: 51 52 53
+        on right: 50 51
+    Arraytype <strval> (94)
+        on left: 54 55
+        on right: 51 52
+    Listvariables <strval> (95)
+        on left: 56 57
+        on right: 46 56
+    Assignment (96)
+        on left: 58 59
+        on right: 21
+    Input (97)
+        on left: 60
+        on right: 24
+    Output (98)
+        on left: 61
+        on right: 25
+    exp <strval> (99)
+        on left: 62 63 64
+        on right: 42 43 45 48 50 58 62 63 92 99
+    TERM <strval> (100)
+        on left: 65 66 67
+        on right: 62 63 64 65 66
+    FACTOR <strval> (101)
+        on left: 68 69 70
+        on right: 65 66 67
+    Literal <strval> (102)
+        on left: 71 72
+        on right: 68 69 70
+    consttype <strval> (103)
+        on left: 73 74 75 76
+        on right: 59 72 87 90 104
+    increment (104)
+        on left: 77 78
+        on right: 26
+    decrement (105)
+        on left: 79 80
+        on right: 27
+    Type <intval> (106)
+        on left: 81 82 83 84 85
+        on right: 37 38 45 46 48 50
+    Return (107)
+        on left: 86 87 88
+        on right: 23
+    While (108)
+        on left: 89
+        on right: 18
+    check (109)
+        on left: 90 91 92 93 94
+        on right: 89
+    relop (110)
+        on left: 95 96 97 98
+        on right: 92
+    Switch (111)
+        on left: 99
+        on right: 20
+    Cases (112)
+        on left: 100 101
+        on right: 99
+    Case (113)
+        on left: 102 103
+        on right: 100 101 103
+    C (114)
+        on left: 104
+        on right: 102 103
+    Default (115)
+        on left: 105
+        on right: 101
+
+
+State 0
+
+    0 $accept: . BEGIN $end
+
+    T_INCLUDE  shift, and go to state 1
+
+    BEGIN    go to state 2
+    preproc  go to state 3
+
+
+State 1
+
+    2 preproc: T_INCLUDE . T_HEADER preproc
+    3        | T_INCLUDE . T_HEADER Functions
+
+    T_HEADER  shift, and go to state 4
+
+
+State 2
+
+    0 $accept: BEGIN . $end
+
+    $end  shift, and go to state 5
+
+
+State 3
+
+    1 BEGIN: preproc .
+
+    $default  reduce using rule 1 (BEGIN)
+
+
+State 4
+
+    2 preproc: T_INCLUDE T_HEADER . preproc
+    3        | T_INCLUDE T_HEADER . Functions
+
+    T_INCLUDE  shift, and go to state 1
+
+    $default  reduce using rule 8 (cf)
+
+    preproc    go to state 6
+    Functions  go to state 7
+    cf         go to state 8
+
+
+State 5
+
+    0 $accept: BEGIN $end .
+
+    $default  accept
+
+
+State 6
+
+    2 preproc: T_INCLUDE T_HEADER preproc .
+
+    $default  reduce using rule 2 (preproc)
+
+
+State 7
+
+    3 preproc: T_INCLUDE T_HEADER Functions .
+
+    $default  reduce using rule 3 (preproc)
+
+
+State 8
+
+    4 Functions: cf . main
+    5 cf: cf . Function_Dec
+    6   | cf . Class
+    7   | cf . Decleration
+
+    T_INT     shift, and go to state 9
+    T_DOUBLE  shift, and go to state 10
+    T_CHAR    shift, and go to state 11
+    T_STRING  shift, and go to state 12
+    T_VOID    shift, and go to state 13
+    T_CLASS   shift, and go to state 14
+
+    $default  reduce using rule 11 (main)
+
+    main          go to state 15
+    Class         go to state 16
+    Function_Dec  go to state 17
+    Decleration   go to state 18
+    ArrayDec      go to state 19
+    Type          go to state 20
+
+
+State 9
+
+    9 main: T_INT . T_MAIN compound_stmt
+   81 Type: T_INT .
+
+    T_MAIN  shift, and go to state 21
+
+    $default  reduce using rule 81 (Type)
+
+
+State 10
+
+   82 Type: T_DOUBLE .
+
+    $default  reduce using rule 82 (Type)
+
+
+State 11
+
+   84 Type: T_CHAR .
+
+    $default  reduce using rule 84 (Type)
+
+
+State 12
+
+   85 Type: T_STRING .
+
+    $default  reduce using rule 85 (Type)
+
+
+State 13
+
+   10 main: T_VOID . T_MAIN compound_stmt
+   83 Type: T_VOID .
+
+    T_MAIN  shift, and go to state 22
+
+    $default  reduce using rule 83 (Type)
+
+
+State 14
+
+   33 Class: T_CLASS . IDENTIFIER compound_stmt ';'
+
+    IDENTIFIER  shift, and go to state 23
+
+
+State 15
+
+    4 Functions: cf main .
+
+    $default  reduce using rule 4 (Functions)
+
+
+State 16
+
+    6 cf: cf Class .
+
+    $default  reduce using rule 6 (cf)
+
+
+State 17
+
+    5 cf: cf Function_Dec .
+
+    $default  reduce using rule 5 (cf)
+
+
+State 18
+
+    7 cf: cf Decleration .
+
+    $default  reduce using rule 7 (cf)
+
+
+State 19
+
+   47 Decleration: ArrayDec .
+
+    $default  reduce using rule 47 (Decleration)
+
+
+State 20
+
+   37 Function_Dec: Type . IDENTIFIER '(' Parameters ')' compound_stmt
+   45 Decleration: Type . IDENTIFIER '=' exp ';'
+   46            | Type . Listvariables ';'
+   48 ArrayDec: Type . IDENTIFIER '[' exp ']' ';'
+   50         | Type . IDENTIFIER '[' exp ']' $@2 '=' '{' ArrayObj '}' ';'
+
+    IDENTIFIER  shift, and go to state 24
+
+    Listvariables  go to state 25
+
+
+State 21
+
+    9 main: T_INT T_MAIN . compound_stmt
+
+    '{'  shift, and go to state 26
+
+    compound_stmt  go to state 27
+
+
+State 22
+
+   10 main: T_VOID T_MAIN . compound_stmt
+
+    '{'  shift, and go to state 26
+
+    compound_stmt  go to state 28
+
+
+State 23
+
+   33 Class: T_CLASS IDENTIFIER . compound_stmt ';'
+
+    '{'  shift, and go to state 26
+
+    compound_stmt  go to state 29
+
+
+State 24
+
+   37 Function_Dec: Type IDENTIFIER . '(' Parameters ')' compound_stmt
+   45 Decleration: Type IDENTIFIER . '=' exp ';'
+   48 ArrayDec: Type IDENTIFIER . '[' exp ']' ';'
+   50         | Type IDENTIFIER . '[' exp ']' $@2 '=' '{' ArrayObj '}' ';'
+   57 Listvariables: IDENTIFIER .
+
+    '='  shift, and go to state 30
+    '('  shift, and go to state 31
+    '['  shift, and go to state 32
+
+    $default  reduce using rule 57 (Listvariables)
+
+
+State 25
+
+   46 Decleration: Type Listvariables . ';'
+   56 Listvariables: Listvariables . ',' IDENTIFIER
+
+    ';'  shift, and go to state 33
+    ','  shift, and go to state 34
+
+
+State 26
+
+   17 compound_stmt: '{' . $@1 statements '}'
+
+    $default  reduce using rule 16 ($@1)
+
+    $@1  go to state 35
+
+
+State 27
+
+    9 main: T_INT T_MAIN compound_stmt .
+
+    $default  reduce using rule 9 (main)
+
+
+State 28
+
+   10 main: T_VOID T_MAIN compound_stmt .
+
+    $default  reduce using rule 10 (main)
+
+
+State 29
+
+   33 Class: T_CLASS IDENTIFIER compound_stmt . ';'
+
+    ';'  shift, and go to state 36
+
+
+State 30
+
+   45 Decleration: Type IDENTIFIER '=' . exp ';'
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    exp        go to state 42
+    TERM       go to state 43
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 31
+
+   37 Function_Dec: Type IDENTIFIER '(' . Parameters ')' compound_stmt
+
+    T_INT     shift, and go to state 47
+    T_DOUBLE  shift, and go to state 10
+    T_CHAR    shift, and go to state 11
+    T_STRING  shift, and go to state 12
+    T_VOID    shift, and go to state 48
+    ','       shift, and go to state 49
+
+    $default  reduce using rule 40 (Parameters)
+
+    Parameters  go to state 50
+    Type        go to state 51
+
+
+State 32
+
+   48 ArrayDec: Type IDENTIFIER '[' . exp ']' ';'
+   50         | Type IDENTIFIER '[' . exp ']' $@2 '=' '{' ArrayObj '}' ';'
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    exp        go to state 52
+    TERM       go to state 43
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 33
+
+   46 Decleration: Type Listvariables ';' .
+
+    $default  reduce using rule 46 (Decleration)
+
+
+State 34
+
+   56 Listvariables: Listvariables ',' . IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 53
+
+
+State 35
+
+   17 compound_stmt: '{' $@1 . statements '}'
+
+    $default  reduce using rule 13 (statements)
+
+    statements  go to state 54
+
+
+State 36
+
+   33 Class: T_CLASS IDENTIFIER compound_stmt ';' .
+
+    $default  reduce using rule 33 (Class)
+
+
+State 37
+
+   75 consttype: T_CHAR_VAL .
+
+    $default  reduce using rule 75 (consttype)
+
+
+State 38
+
+   74 consttype: T_FLOAT_VAL .
+
+    $default  reduce using rule 74 (consttype)
+
+
+State 39
+
+   73 consttype: T_INTEGER_VAL .
+
+    $default  reduce using rule 73 (consttype)
+
+
+State 40
+
+   76 consttype: T_STRING_VAL .
+
+    $default  reduce using rule 76 (consttype)
+
+
+State 41
+
+   71 Literal: IDENTIFIER .
+
+    $default  reduce using rule 71 (Literal)
+
+
+State 42
+
+   45 Decleration: Type IDENTIFIER '=' exp . ';'
+   62 exp: exp . '+' TERM
+   63    | exp . '-' TERM
+
+    '+'  shift, and go to state 55
+    '-'  shift, and go to state 56
+    ';'  shift, and go to state 57
+
+
+State 43
+
+   64 exp: TERM .
+   65 TERM: TERM . '*' FACTOR
+   66     | TERM . '/' FACTOR
+
+    '*'  shift, and go to state 58
+    '/'  shift, and go to state 59
+
+    $default  reduce using rule 64 (exp)
+
+
+State 44
+
+   67 TERM: FACTOR .
+
+    $default  reduce using rule 67 (TERM)
+
+
+State 45
+
+   68 FACTOR: Literal .
+   69       | Literal . T_INC
+   70       | Literal . T_DEC
+
+    T_INC  shift, and go to state 60
+    T_DEC  shift, and go to state 61
+
+    $default  reduce using rule 68 (FACTOR)
+
+
+State 46
+
+   72 Literal: consttype .
+
+    $default  reduce using rule 72 (Literal)
+
+
+State 47
+
+   81 Type: T_INT .
+
+    $default  reduce using rule 81 (Type)
+
+
+State 48
+
+   83 Type: T_VOID .
+
+    $default  reduce using rule 83 (Type)
+
+
+State 49
+
+   39 Parameters: ',' . Parameters
+
+    T_INT     shift, and go to state 47
+    T_DOUBLE  shift, and go to state 10
+    T_CHAR    shift, and go to state 11
+    T_STRING  shift, and go to state 12
+    T_VOID    shift, and go to state 48
+    ','       shift, and go to state 49
+
+    $default  reduce using rule 40 (Parameters)
+
+    Parameters  go to state 62
+    Type        go to state 51
+
+
+State 50
+
+   37 Function_Dec: Type IDENTIFIER '(' Parameters . ')' compound_stmt
+
+    ')'  shift, and go to state 63
+
+
+State 51
+
+   38 Parameters: Type . IDENTIFIER Parameters
+
+    IDENTIFIER  shift, and go to state 64
+
+
+State 52
+
+   48 ArrayDec: Type IDENTIFIER '[' exp . ']' ';'
+   50         | Type IDENTIFIER '[' exp . ']' $@2 '=' '{' ArrayObj '}' ';'
+   62 exp: exp . '+' TERM
+   63    | exp . '-' TERM
+
+    '+'  shift, and go to state 55
+    '-'  shift, and go to state 56
+    ']'  shift, and go to state 65
+
+
+State 53
+
+   56 Listvariables: Listvariables ',' IDENTIFIER .
+
+    $default  reduce using rule 56 (Listvariables)
+
+
+State 54
+
+   12 statements: statements . stmt
+   17 compound_stmt: '{' $@1 statements . '}'
+
+    T_WHILE      shift, and go to state 66
+    T_SWITCH     shift, and go to state 67
+    T_PRINT      shift, and go to state 68
+    T_INT        shift, and go to state 47
+    T_DOUBLE     shift, and go to state 10
+    T_CHAR       shift, and go to state 11
+    T_STRING     shift, and go to state 12
+    T_VOID       shift, and go to state 48
+    T_COUT       shift, and go to state 69
+    T_CIN        shift, and go to state 70
+    T_BREAK      shift, and go to state 71
+    IDENTIFIER   shift, and go to state 72
+    T_INC        shift, and go to state 73
+    T_DEC        shift, and go to state 74
+    T_RETURN     shift, and go to state 75
+    T_CLASS      shift, and go to state 14
+    T_PRIVATE    shift, and go to state 76
+    T_PUBLIC     shift, and go to state 77
+    T_PROTECTED  shift, and go to state 78
+    '{'          shift, and go to state 26
+    '}'          shift, and go to state 79
+    ';'          shift, and go to state 80
+
+    stmt           go to state 81
+    compound_stmt  go to state 82
+    single_stmt    go to state 83
+    Class          go to state 84
+    access         go to state 85
+    Function_call  go to state 86
+    Print          go to state 87
+    Decleration    go to state 88
+    ArrayDec       go to state 19
+    Assignment     go to state 89
+    Input          go to state 90
+    Output         go to state 91
+    increment      go to state 92
+    decrement      go to state 93
+    Type           go to state 94
+    Return         go to state 95
+    While          go to state 96
+    Switch         go to state 97
+
+
+State 55
+
+   62 exp: exp '+' . TERM
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    TERM       go to state 98
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 56
+
+   63 exp: exp '-' . TERM
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    TERM       go to state 99
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 57
+
+   45 Decleration: Type IDENTIFIER '=' exp ';' .
+
+    $default  reduce using rule 45 (Decleration)
+
+
+State 58
+
+   65 TERM: TERM '*' . FACTOR
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    FACTOR     go to state 100
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 59
+
+   66 TERM: TERM '/' . FACTOR
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    FACTOR     go to state 101
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 60
+
+   69 FACTOR: Literal T_INC .
+
+    $default  reduce using rule 69 (FACTOR)
+
+
+State 61
+
+   70 FACTOR: Literal T_DEC .
+
+    $default  reduce using rule 70 (FACTOR)
+
+
+State 62
+
+   39 Parameters: ',' Parameters .
+
+    $default  reduce using rule 39 (Parameters)
+
+
+State 63
+
+   37 Function_Dec: Type IDENTIFIER '(' Parameters ')' . compound_stmt
+
+    '{'  shift, and go to state 26
+
+    compound_stmt  go to state 102
+
+
+State 64
+
+   38 Parameters: Type IDENTIFIER . Parameters
+
+    T_INT     shift, and go to state 47
+    T_DOUBLE  shift, and go to state 10
+    T_CHAR    shift, and go to state 11
+    T_STRING  shift, and go to state 12
+    T_VOID    shift, and go to state 48
+    ','       shift, and go to state 49
+
+    $default  reduce using rule 40 (Parameters)
+
+    Parameters  go to state 103
+    Type        go to state 51
+
+
+State 65
+
+   48 ArrayDec: Type IDENTIFIER '[' exp ']' . ';'
+   50         | Type IDENTIFIER '[' exp ']' . $@2 '=' '{' ArrayObj '}' ';'
+
+    ';'  shift, and go to state 104
+
+    $default  reduce using rule 49 ($@2)
+
+    $@2  go to state 105
+
+
+State 66
+
+   89 While: T_WHILE . '(' check ')' compound_stmt
+
+    '('  shift, and go to state 106
+
+
+State 67
+
+   99 Switch: T_SWITCH . '(' exp ')' '{' Cases '}'
+
+    '('  shift, and go to state 107
+
+
+State 68
+
+   44 Print: T_PRINT . '(' T_STRING_VAL ')' ';'
+
+    '('  shift, and go to state 108
+
+
+State 69
+
+   61 Output: T_COUT . T_EXT T_STRING_VAL ';'
+
+    T_EXT  shift, and go to state 109
+
+
+State 70
+
+   60 Input: T_CIN . T_INS IDENTIFIER ';'
+
+    T_INS  shift, and go to state 110
+
+
+State 71
+
+   28 single_stmt: T_BREAK . ';'
+
+    ';'  shift, and go to state 111
+
+
+State 72
+
+   41 Function_call: IDENTIFIER . '(' Arguments ')' ';'
+   58 Assignment: IDENTIFIER . '=' exp ';'
+   59           | IDENTIFIER . '[' T_INTEGER_VAL ']' '=' consttype ';'
+   77 increment: IDENTIFIER . T_INC ';'
+   79 decrement: IDENTIFIER . T_DEC ';'
+
+    '='    shift, and go to state 112
+    T_INC  shift, and go to state 113
+    T_DEC  shift, and go to state 114
+    '('    shift, and go to state 115
+    '['    shift, and go to state 116
+
+
+State 73
+
+   78 increment: T_INC . IDENTIFIER ';'
+
+    IDENTIFIER  shift, and go to state 117
+
+
+State 74
+
+   80 decrement: T_DEC . IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 118
+
+
+State 75
+
+   86 Return: T_RETURN . IDENTIFIER ';'
+   87       | T_RETURN . consttype ';'
+   88       | T_RETURN . ';'
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 119
+    ';'            shift, and go to state 120
+
+    consttype  go to state 121
+
+
+State 76
+
+   35 access: T_PRIVATE . ':'
+
+    ':'  shift, and go to state 122
+
+
+State 77
+
+   34 access: T_PUBLIC . ':'
+
+    ':'  shift, and go to state 123
+
+
+State 78
+
+   36 access: T_PROTECTED . ':'
+
+    ':'  shift, and go to state 124
+
+
+State 79
+
+   17 compound_stmt: '{' $@1 statements '}' .
+
+    $default  reduce using rule 17 (compound_stmt)
+
+
+State 80
+
+   32 single_stmt: ';' .
+
+    $default  reduce using rule 32 (single_stmt)
+
+
+State 81
+
+   12 statements: statements stmt .
+
+    $default  reduce using rule 12 (statements)
+
+
+State 82
+
+   14 stmt: compound_stmt .
+
+    $default  reduce using rule 14 (stmt)
+
+
+State 83
+
+   15 stmt: single_stmt .
+
+    $default  reduce using rule 15 (stmt)
+
+
+State 84
+
+   29 single_stmt: Class .
+
+    $default  reduce using rule 29 (single_stmt)
+
+
+State 85
+
+   30 single_stmt: access .
+
+    $default  reduce using rule 30 (single_stmt)
+
+
+State 86
+
+   31 single_stmt: Function_call .
+
+    $default  reduce using rule 31 (single_stmt)
+
+
+State 87
+
+   22 single_stmt: Print .
+
+    $default  reduce using rule 22 (single_stmt)
+
+
+State 88
+
+   19 single_stmt: Decleration .
+
+    $default  reduce using rule 19 (single_stmt)
+
+
+State 89
+
+   21 single_stmt: Assignment .
+
+    $default  reduce using rule 21 (single_stmt)
+
+
+State 90
+
+   24 single_stmt: Input .
+
+    $default  reduce using rule 24 (single_stmt)
+
+
+State 91
+
+   25 single_stmt: Output .
+
+    $default  reduce using rule 25 (single_stmt)
+
+
+State 92
+
+   26 single_stmt: increment .
+
+    $default  reduce using rule 26 (single_stmt)
+
+
+State 93
+
+   27 single_stmt: decrement .
+
+    $default  reduce using rule 27 (single_stmt)
+
+
+State 94
+
+   45 Decleration: Type . IDENTIFIER '=' exp ';'
+   46            | Type . Listvariables ';'
+   48 ArrayDec: Type . IDENTIFIER '[' exp ']' ';'
+   50         | Type . IDENTIFIER '[' exp ']' $@2 '=' '{' ArrayObj '}' ';'
+
+    IDENTIFIER  shift, and go to state 125
+
+    Listvariables  go to state 25
+
+
+State 95
+
+   23 single_stmt: Return .
+
+    $default  reduce using rule 23 (single_stmt)
+
+
+State 96
+
+   18 single_stmt: While .
+
+    $default  reduce using rule 18 (single_stmt)
+
+
+State 97
+
+   20 single_stmt: Switch .
+
+    $default  reduce using rule 20 (single_stmt)
+
+
+State 98
+
+   62 exp: exp '+' TERM .
+   65 TERM: TERM . '*' FACTOR
+   66     | TERM . '/' FACTOR
+
+    '*'  shift, and go to state 58
+    '/'  shift, and go to state 59
+
+    $default  reduce using rule 62 (exp)
+
+
+State 99
+
+   63 exp: exp '-' TERM .
+   65 TERM: TERM . '*' FACTOR
+   66     | TERM . '/' FACTOR
+
+    '*'  shift, and go to state 58
+    '/'  shift, and go to state 59
+
+    $default  reduce using rule 63 (exp)
+
+
+State 100
+
+   65 TERM: TERM '*' FACTOR .
+
+    $default  reduce using rule 65 (TERM)
+
+
+State 101
+
+   66 TERM: TERM '/' FACTOR .
+
+    $default  reduce using rule 66 (TERM)
+
+
+State 102
+
+   37 Function_Dec: Type IDENTIFIER '(' Parameters ')' compound_stmt .
+
+    $default  reduce using rule 37 (Function_Dec)
+
+
+State 103
+
+   38 Parameters: Type IDENTIFIER Parameters .
+
+    $default  reduce using rule 38 (Parameters)
+
+
+State 104
+
+   48 ArrayDec: Type IDENTIFIER '[' exp ']' ';' .
+
+    $default  reduce using rule 48 (ArrayDec)
+
+
+State 105
+
+   50 ArrayDec: Type IDENTIFIER '[' exp ']' $@2 . '=' '{' ArrayObj '}' ';'
+
+    '='  shift, and go to state 126
+
+
+State 106
+
+   89 While: T_WHILE '(' . check ')' compound_stmt
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 127
+    T_TRUE         shift, and go to state 128
+    T_FALSE        shift, and go to state 129
+
+    exp        go to state 130
+    TERM       go to state 43
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 131
+    check      go to state 132
+
+
+State 107
+
+   99 Switch: T_SWITCH '(' . exp ')' '{' Cases '}'
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    exp        go to state 133
+    TERM       go to state 43
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 108
+
+   44 Print: T_PRINT '(' . T_STRING_VAL ')' ';'
+
+    T_STRING_VAL  shift, and go to state 134
+
+
+State 109
+
+   61 Output: T_COUT T_EXT . T_STRING_VAL ';'
+
+    T_STRING_VAL  shift, and go to state 135
+
+
+State 110
+
+   60 Input: T_CIN T_INS . IDENTIFIER ';'
+
+    IDENTIFIER  shift, and go to state 136
+
+
+State 111
+
+   28 single_stmt: T_BREAK ';' .
+
+    $default  reduce using rule 28 (single_stmt)
+
+
+State 112
+
+   58 Assignment: IDENTIFIER '=' . exp ';'
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    exp        go to state 137
+    TERM       go to state 43
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 113
+
+   77 increment: IDENTIFIER T_INC . ';'
+
+    ';'  shift, and go to state 138
+
+
+State 114
+
+   79 decrement: IDENTIFIER T_DEC . ';'
+
+    ';'  shift, and go to state 139
+
+
+State 115
+
+   41 Function_call: IDENTIFIER '(' . Arguments ')' ';'
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    Arguments  go to state 140
+    exp        go to state 141
+    TERM       go to state 43
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 116
+
+   59 Assignment: IDENTIFIER '[' . T_INTEGER_VAL ']' '=' consttype ';'
+
+    T_INTEGER_VAL  shift, and go to state 142
+
+
+State 117
+
+   78 increment: T_INC IDENTIFIER . ';'
+
+    ';'  shift, and go to state 143
+
+
+State 118
+
+   80 decrement: T_DEC IDENTIFIER .
+
+    $default  reduce using rule 80 (decrement)
+
+
+State 119
+
+   86 Return: T_RETURN IDENTIFIER . ';'
+
+    ';'  shift, and go to state 144
+
+
+State 120
+
+   88 Return: T_RETURN ';' .
+
+    $default  reduce using rule 88 (Return)
+
+
+State 121
+
+   87 Return: T_RETURN consttype . ';'
+
+    ';'  shift, and go to state 145
+
+
+State 122
+
+   35 access: T_PRIVATE ':' .
+
+    $default  reduce using rule 35 (access)
+
+
+State 123
+
+   34 access: T_PUBLIC ':' .
+
+    $default  reduce using rule 34 (access)
+
+
+State 124
+
+   36 access: T_PROTECTED ':' .
+
+    $default  reduce using rule 36 (access)
+
+
+State 125
+
+   45 Decleration: Type IDENTIFIER . '=' exp ';'
+   48 ArrayDec: Type IDENTIFIER . '[' exp ']' ';'
+   50         | Type IDENTIFIER . '[' exp ']' $@2 '=' '{' ArrayObj '}' ';'
+   57 Listvariables: IDENTIFIER .
+
+    '='  shift, and go to state 30
+    '['  shift, and go to state 32
+
+    $default  reduce using rule 57 (Listvariables)
+
+
+State 126
+
+   50 ArrayDec: Type IDENTIFIER '[' exp ']' $@2 '=' . '{' ArrayObj '}' ';'
+
+    '{'  shift, and go to state 146
+
+
+State 127
+
+   71 Literal: IDENTIFIER .
+   91 check: IDENTIFIER .
+
+    ')'       reduce using rule 91 (check)
+    $default  reduce using rule 71 (Literal)
+
+
+State 128
+
+   93 check: T_TRUE .
+
+    $default  reduce using rule 93 (check)
+
+
+State 129
+
+   94 check: T_FALSE .
+
+    $default  reduce using rule 94 (check)
+
+
+State 130
+
+   62 exp: exp . '+' TERM
+   63    | exp . '-' TERM
+   92 check: exp . relop exp
+
+    T_EQ  shift, and go to state 147
+    T_NE  shift, and go to state 148
+    '<'   shift, and go to state 149
+    '>'   shift, and go to state 150
+    '+'   shift, and go to state 55
+    '-'   shift, and go to state 56
+
+    relop  go to state 151
+
+
+State 131
+
+   72 Literal: consttype .
+   90 check: consttype .
+
+    ')'       reduce using rule 90 (check)
+    $default  reduce using rule 72 (Literal)
+
+
+State 132
+
+   89 While: T_WHILE '(' check . ')' compound_stmt
+
+    ')'  shift, and go to state 152
+
+
+State 133
+
+   62 exp: exp . '+' TERM
+   63    | exp . '-' TERM
+   99 Switch: T_SWITCH '(' exp . ')' '{' Cases '}'
+
+    '+'  shift, and go to state 55
+    '-'  shift, and go to state 56
+    ')'  shift, and go to state 153
+
+
+State 134
+
+   44 Print: T_PRINT '(' T_STRING_VAL . ')' ';'
+
+    ')'  shift, and go to state 154
+
+
+State 135
+
+   61 Output: T_COUT T_EXT T_STRING_VAL . ';'
+
+    ';'  shift, and go to state 155
+
+
+State 136
+
+   60 Input: T_CIN T_INS IDENTIFIER . ';'
+
+    ';'  shift, and go to state 156
+
+
+State 137
+
+   58 Assignment: IDENTIFIER '=' exp . ';'
+   62 exp: exp . '+' TERM
+   63    | exp . '-' TERM
+
+    '+'  shift, and go to state 55
+    '-'  shift, and go to state 56
+    ';'  shift, and go to state 157
+
+
+State 138
+
+   77 increment: IDENTIFIER T_INC ';' .
+
+    $default  reduce using rule 77 (increment)
+
+
+State 139
+
+   79 decrement: IDENTIFIER T_DEC ';' .
+
+    $default  reduce using rule 79 (decrement)
+
+
+State 140
+
+   41 Function_call: IDENTIFIER '(' Arguments . ')' ';'
+   42 Arguments: Arguments . ',' exp
+
+    ')'  shift, and go to state 158
+    ','  shift, and go to state 159
+
+
+State 141
+
+   43 Arguments: exp .
+   62 exp: exp . '+' TERM
+   63    | exp . '-' TERM
+
+    '+'  shift, and go to state 55
+    '-'  shift, and go to state 56
+
+    $default  reduce using rule 43 (Arguments)
+
+
+State 142
+
+   59 Assignment: IDENTIFIER '[' T_INTEGER_VAL . ']' '=' consttype ';'
+
+    ']'  shift, and go to state 160
+
+
+State 143
+
+   78 increment: T_INC IDENTIFIER ';' .
+
+    $default  reduce using rule 78 (increment)
+
+
+State 144
+
+   86 Return: T_RETURN IDENTIFIER ';' .
+
+    $default  reduce using rule 86 (Return)
+
+
+State 145
+
+   87 Return: T_RETURN consttype ';' .
+
+    $default  reduce using rule 87 (Return)
+
+
+State 146
+
+   50 ArrayDec: Type IDENTIFIER '[' exp ']' $@2 '=' '{' . ArrayObj '}' ';'
+
+    T_CHAR_VAL     shift, and go to state 161
+    T_INTEGER_VAL  shift, and go to state 162
+
+    $default  reduce using rule 53 (ArrayObj)
+
+    ArrayObj   go to state 163
+    Arraytype  go to state 164
+
+
+State 147
+
+   98 relop: T_EQ .
+
+    $default  reduce using rule 98 (relop)
+
+
+State 148
+
+   97 relop: T_NE .
+
+    $default  reduce using rule 97 (relop)
+
+
+State 149
+
+   95 relop: '<' .
+
+    $default  reduce using rule 95 (relop)
+
+
+State 150
+
+   96 relop: '>' .
+
+    $default  reduce using rule 96 (relop)
+
+
+State 151
+
+   92 check: exp relop . exp
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    exp        go to state 165
+    TERM       go to state 43
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 152
+
+   89 While: T_WHILE '(' check ')' . compound_stmt
+
+    '{'  shift, and go to state 26
+
+    compound_stmt  go to state 166
+
+
+State 153
+
+   99 Switch: T_SWITCH '(' exp ')' . '{' Cases '}'
+
+    '{'  shift, and go to state 167
+
+
+State 154
+
+   44 Print: T_PRINT '(' T_STRING_VAL ')' . ';'
+
+    ';'  shift, and go to state 168
+
+
+State 155
+
+   61 Output: T_COUT T_EXT T_STRING_VAL ';' .
+
+    $default  reduce using rule 61 (Output)
+
+
+State 156
+
+   60 Input: T_CIN T_INS IDENTIFIER ';' .
+
+    $default  reduce using rule 60 (Input)
+
+
+State 157
+
+   58 Assignment: IDENTIFIER '=' exp ';' .
+
+    $default  reduce using rule 58 (Assignment)
+
+
+State 158
+
+   41 Function_call: IDENTIFIER '(' Arguments ')' . ';'
+
+    ';'  shift, and go to state 169
+
+
+State 159
+
+   42 Arguments: Arguments ',' . exp
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+    IDENTIFIER     shift, and go to state 41
+
+    exp        go to state 170
+    TERM       go to state 43
+    FACTOR     go to state 44
+    Literal    go to state 45
+    consttype  go to state 46
+
+
+State 160
+
+   59 Assignment: IDENTIFIER '[' T_INTEGER_VAL ']' . '=' consttype ';'
+
+    '='  shift, and go to state 171
+
+
+State 161
+
+   55 Arraytype: T_CHAR_VAL .
+
+    $default  reduce using rule 55 (Arraytype)
+
+
+State 162
+
+   54 Arraytype: T_INTEGER_VAL .
+
+    $default  reduce using rule 54 (Arraytype)
+
+
+State 163
+
+   50 ArrayDec: Type IDENTIFIER '[' exp ']' $@2 '=' '{' ArrayObj . '}' ';'
+   51 ArrayObj: ArrayObj . ',' Arraytype
+
+    '}'  shift, and go to state 172
+    ','  shift, and go to state 173
+
+
+State 164
+
+   52 ArrayObj: Arraytype .
+
+    $default  reduce using rule 52 (ArrayObj)
+
+
+State 165
+
+   62 exp: exp . '+' TERM
+   63    | exp . '-' TERM
+   92 check: exp relop exp .
+
+    '+'  shift, and go to state 55
+    '-'  shift, and go to state 56
+
+    $default  reduce using rule 92 (check)
+
+
+State 166
+
+   89 While: T_WHILE '(' check ')' compound_stmt .
+
+    $default  reduce using rule 89 (While)
+
+
+State 167
+
+   99 Switch: T_SWITCH '(' exp ')' '{' . Cases '}'
+
+    T_CASE  shift, and go to state 174
+
+    Cases  go to state 175
+    Case   go to state 176
+    C      go to state 177
+
+
+State 168
+
+   44 Print: T_PRINT '(' T_STRING_VAL ')' ';' .
+
+    $default  reduce using rule 44 (Print)
+
+
+State 169
+
+   41 Function_call: IDENTIFIER '(' Arguments ')' ';' .
+
+    $default  reduce using rule 41 (Function_call)
+
+
+State 170
+
+   42 Arguments: Arguments ',' exp .
+   62 exp: exp . '+' TERM
+   63    | exp . '-' TERM
+
+    '+'  shift, and go to state 55
+    '-'  shift, and go to state 56
+
+    $default  reduce using rule 42 (Arguments)
+
+
+State 171
+
+   59 Assignment: IDENTIFIER '[' T_INTEGER_VAL ']' '=' . consttype ';'
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+
+    consttype  go to state 178
+
+
+State 172
+
+   50 ArrayDec: Type IDENTIFIER '[' exp ']' $@2 '=' '{' ArrayObj '}' . ';'
+
+    ';'  shift, and go to state 179
+
+
+State 173
+
+   51 ArrayObj: ArrayObj ',' . Arraytype
+
+    T_CHAR_VAL     shift, and go to state 161
+    T_INTEGER_VAL  shift, and go to state 162
+
+    Arraytype  go to state 180
+
+
+State 174
+
+  104 C: T_CASE . consttype ':' statements T_BREAK ';'
+
+    T_CHAR_VAL     shift, and go to state 37
+    T_FLOAT_VAL    shift, and go to state 38
+    T_INTEGER_VAL  shift, and go to state 39
+    T_STRING_VAL   shift, and go to state 40
+
+    consttype  go to state 181
+
+
+State 175
+
+   99 Switch: T_SWITCH '(' exp ')' '{' Cases . '}'
+
+    '}'  shift, and go to state 182
+
+
+State 176
+
+  100 Cases: Case .
+  101      | Case . Default
+  103 Case: Case . C
+
+    T_CASE     shift, and go to state 174
+    T_DEFAULT  shift, and go to state 183
+
+    $default  reduce using rule 100 (Cases)
+
+    C        go to state 184
+    Default  go to state 185
+
+
+State 177
+
+  102 Case: C .
+
+    $default  reduce using rule 102 (Case)
+
+
+State 178
+
+   59 Assignment: IDENTIFIER '[' T_INTEGER_VAL ']' '=' consttype . ';'
+
+    ';'  shift, and go to state 186
+
+
+State 179
+
+   50 ArrayDec: Type IDENTIFIER '[' exp ']' $@2 '=' '{' ArrayObj '}' ';' .
+
+    $default  reduce using rule 50 (ArrayDec)
+
+
+State 180
+
+   51 ArrayObj: ArrayObj ',' Arraytype .
+
+    $default  reduce using rule 51 (ArrayObj)
+
+
+State 181
+
+  104 C: T_CASE consttype . ':' statements T_BREAK ';'
+
+    ':'  shift, and go to state 187
+
+
+State 182
+
+   99 Switch: T_SWITCH '(' exp ')' '{' Cases '}' .
+
+    $default  reduce using rule 99 (Switch)
+
+
+State 183
+
+  105 Default: T_DEFAULT . ':' statements
+
+    ':'  shift, and go to state 188
+
+
+State 184
+
+  103 Case: Case C .
+
+    $default  reduce using rule 103 (Case)
+
+
+State 185
+
+  101 Cases: Case Default .
+
+    $default  reduce using rule 101 (Cases)
+
+
+State 186
+
+   59 Assignment: IDENTIFIER '[' T_INTEGER_VAL ']' '=' consttype ';' .
+
+    $default  reduce using rule 59 (Assignment)
+
+
+State 187
+
+  104 C: T_CASE consttype ':' . statements T_BREAK ';'
+
+    $default  reduce using rule 13 (statements)
+
+    statements  go to state 189
+
+
+State 188
+
+  105 Default: T_DEFAULT ':' . statements
+
+    $default  reduce using rule 13 (statements)
+
+    statements  go to state 190
+
+
+State 189
+
+   12 statements: statements . stmt
+  104 C: T_CASE consttype ':' statements . T_BREAK ';'
+
+    T_WHILE      shift, and go to state 66
+    T_SWITCH     shift, and go to state 67
+    T_PRINT      shift, and go to state 68
+    T_INT        shift, and go to state 47
+    T_DOUBLE     shift, and go to state 10
+    T_CHAR       shift, and go to state 11
+    T_STRING     shift, and go to state 12
+    T_VOID       shift, and go to state 48
+    T_COUT       shift, and go to state 69
+    T_CIN        shift, and go to state 70
+    T_BREAK      shift, and go to state 191
+    IDENTIFIER   shift, and go to state 72
+    T_INC        shift, and go to state 73
+    T_DEC        shift, and go to state 74
+    T_RETURN     shift, and go to state 75
+    T_CLASS      shift, and go to state 14
+    T_PRIVATE    shift, and go to state 76
+    T_PUBLIC     shift, and go to state 77
+    T_PROTECTED  shift, and go to state 78
+    '{'          shift, and go to state 26
+    ';'          shift, and go to state 80
+
+    stmt           go to state 81
+    compound_stmt  go to state 82
+    single_stmt    go to state 83
+    Class          go to state 84
+    access         go to state 85
+    Function_call  go to state 86
+    Print          go to state 87
+    Decleration    go to state 88
+    ArrayDec       go to state 19
+    Assignment     go to state 89
+    Input          go to state 90
+    Output         go to state 91
+    increment      go to state 92
+    decrement      go to state 93
+    Type           go to state 94
+    Return         go to state 95
+    While          go to state 96
+    Switch         go to state 97
+
+
+State 190
+
+   12 statements: statements . stmt
+  105 Default: T_DEFAULT ':' statements .
+
+    T_WHILE      shift, and go to state 66
+    T_SWITCH     shift, and go to state 67
+    T_PRINT      shift, and go to state 68
+    T_INT        shift, and go to state 47
+    T_DOUBLE     shift, and go to state 10
+    T_CHAR       shift, and go to state 11
+    T_STRING     shift, and go to state 12
+    T_VOID       shift, and go to state 48
+    T_COUT       shift, and go to state 69
+    T_CIN        shift, and go to state 70
+    T_BREAK      shift, and go to state 71
+    IDENTIFIER   shift, and go to state 72
+    T_INC        shift, and go to state 73
+    T_DEC        shift, and go to state 74
+    T_RETURN     shift, and go to state 75
+    T_CLASS      shift, and go to state 14
+    T_PRIVATE    shift, and go to state 76
+    T_PUBLIC     shift, and go to state 77
+    T_PROTECTED  shift, and go to state 78
+    '{'          shift, and go to state 26
+    ';'          shift, and go to state 80
+
+    $default  reduce using rule 105 (Default)
+
+    stmt           go to state 81
+    compound_stmt  go to state 82
+    single_stmt    go to state 83
+    Class          go to state 84
+    access         go to state 85
+    Function_call  go to state 86
+    Print          go to state 87
+    Decleration    go to state 88
+    ArrayDec       go to state 19
+    Assignment     go to state 89
+    Input          go to state 90
+    Output         go to state 91
+    increment      go to state 92
+    decrement      go to state 93
+    Type           go to state 94
+    Return         go to state 95
+    While          go to state 96
+    Switch         go to state 97
+
+
+State 191
+
+   28 single_stmt: T_BREAK . ';'
+  104 C: T_CASE consttype ':' statements T_BREAK . ';'
+
+    ';'  shift, and go to state 192
+
+
+State 192
+
+   28 single_stmt: T_BREAK ';' .
+  104 C: T_CASE consttype ':' statements T_BREAK ';' .
+
+    T_CASE     reduce using rule 104 (C)
+    T_DEFAULT  reduce using rule 104 (C)
+    '}'        reduce using rule 104 (C)
+    $default   reduce using rule 28 (single_stmt)
