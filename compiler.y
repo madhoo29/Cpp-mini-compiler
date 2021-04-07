@@ -48,10 +48,16 @@ void yyerror(const char *str)
 %start BEGIN
 %type <intval> T_INT T_STRING T_DOUBLE T_VOID T_BOOL T_CHAR 
 %type <strval> T_FLOAT_VAL T_INTEGER_VAL T_CHAR_VAL T_STRING_VAL IDENTIFIER exp consttype Listvariables Arraytype Term Factor Literal
+// %type <intval> T_FLOAT_VAL T_INTEGER_VAL T_CHAR_VAL T_STRING_VAL IDENTIFIER exp consttype Listvariables Arraytype Term Factor Literal
 %type <intval> Type
-// %type <strval> preproc
 
-%union {int intval; char* strval;};
+%union {  
+  struct {
+     char* strval;
+     int  intval;
+  } structure;
+}
+
 %%
  
 BEGIN: preproc 
@@ -67,7 +73,7 @@ cf : cf Function_Dec
     | cf Class
     | cf Decleration
     |
-            ;      
+    ;      
 
  /* BEGIN: T_INCLUDE T_HEADER  preproc 
         ;
@@ -83,12 +89,12 @@ statements:statements stmt
     |
     ;
     
-stmt:compound_stmt
-    |single_stmt
+stmt:compound_stmt {$<structure.intval>$ = $<structure.intval>1; printf(" cmpd stmt type %d\n",$<structure.intval>$) ;}
+    |single_stmt {$<structure.intval>$ = $<structure.intval>1; printf(" single stmt type %d\n",$<structure.intval>$) ;}
     ;
 
  /* The function body is covered in braces and has multiple statements. */
-compound_stmt :'{' {scope++;enter_scope(scope); } statements '}'  {exit_scope(scope + 1); scope--;} 
+compound_stmt :'{' {scope++;enter_scope(scope); } statements {$<structure.intval>$ = $<structure.intval>1; printf("function return type %d\n",$<structure.intval>$) ;} '}'  {exit_scope(scope + 1); scope--;} 
     ;
 
 
@@ -99,7 +105,7 @@ single_stmt: While
     | Switch
     | Assignment
     | Print
-    | Return
+    | Return {$<structure.intval>$ = $<structure.intval>1; printf("return type %d\n",$<structure.intval>$) ;}
     | Input
     | Output 
     | increment
@@ -119,7 +125,10 @@ access : T_PUBLIC ':'
     | T_PROTECTED ':'
     ;
 
-Function_Dec : Type IDENTIFIER '(' Parameters ')' compound_stmt;
+Function_Dec : Type IDENTIFIER '(' Parameters ')' compound_stmt ';' {int t1 = $<structure.intval>1;
+                                                                  int t2 = $<structure.intval>6;
+                                                                  if (t1!=t2)
+                                                                 printf("return type does not match function");}
 
 Parameters :  Type IDENTIFIER Parameters 
             |',' Parameters
@@ -135,33 +144,33 @@ Arguments : Arguments ',' exp
 Print : T_PRINT '(' T_STRING_VAL ')' ';'
         
 Decleration : Type IDENTIFIER '=' exp ';' { 
-                                            err = lookup($2,scope, $1, @2.first_line); 
-                                            if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$2);
+                                            err = lookup($<structure.strval>2,scope, $<structure.intval>1, @2.first_line); 
+                                            if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>2);
                                             else{
-                                            err = check($2,scope,@2.first_line,$4);  
-                                            if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$2);
+                                            err = check($<structure.strval>2,scope,@2.first_line,$<structure.strval>4);  
+                                            if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>2);
                                             }
                                             }  
         
-        | Type Listvariables ';' {$1 = $2;}
+        | Type Listvariables ';' 
         | ArrayDec 
         ;
 
-ArrayDec : Type IDENTIFIER '[' exp ']' ';' { err = lookup_arr($2,scope, $1, @2.first_line, $4); 
-                                            if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$2);
+ArrayDec : Type IDENTIFIER '[' exp ']' ';' { err = lookup_arr($<structure.strval>2,scope, $<structure.intval>1, @2.first_line, $<structure.strval>4); 
+                                            if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>2);
                                            }
-            | Type IDENTIFIER '[' exp ']' { err = lookup_arr($2,scope, $1, @2.first_line, $4); 
+            | Type IDENTIFIER '[' exp ']' { err = lookup_arr($<structure.strval>2,scope, $<structure.intval>1, @2.first_line, $<structure.strval>4); 
             
-                                            if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$2);
-                                            id = $2;
+                                            if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>2);
+                                            id = $<structure.strval>2;
                                             idx = 0;
                                             
 
                                            } '=' '{' ArrayObj '}' ';' 
 
 
-ArrayObj : ArrayObj ',' Arraytype {check_arr(id,scope,@3.first_line,$3,idx++);  }
-        | Arraytype  {check_arr(id,scope,@1.first_line,$1,idx++);  }
+ArrayObj : ArrayObj ',' Arraytype {check_arr(id,scope,@3.first_line,$<structure.strval>3,idx++);  }
+        | Arraytype  {check_arr(id,scope,@1.first_line,$<structure.strval>1,idx++);  }
         | 
         ;
 
@@ -170,22 +179,24 @@ Arraytype : T_INTEGER_VAL
     ;
 
 
-Listvariables : Listvariables ',' IDENTIFIER {err = lookup($3,scope, type, @3.first_line);
-                                                if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$3);
+Listvariables : Listvariables ',' IDENTIFIER {
+												err = lookup($<structure.strval>3,scope, type, @3.first_line);
+                                                if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>3);
                                                 else{
-                                                err = check($3,scope,@3.first_line,"0");
-                                                if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$3); }}
+                                                err = check($<structure.strval>3,scope,@3.first_line,"0");
+                                                if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>3); }}
         | IDENTIFIER {
-                        err = lookup($1,scope, type, @1.first_line);
-                        if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$1);
+			            
+                        err = lookup($<structure.strval>1,scope, type, @1.first_line);
+                        if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>1);
                         else{
-                        err = check($1,scope,@1.first_line,"0");
-                        if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$1); }}
+                        err = check($<structure.strval>1,scope,@1.first_line,"0");
+                        if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); }}
         ;
-Assignment : IDENTIFIER '=' exp ';' {err = check($1,scope, @1.first_line, $3); 
-                                    if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$1);}
-        | IDENTIFIER '[' T_INTEGER_VAL ']' '=' consttype ';' {err = check_arr($1,scope, @1.first_line, $6, atoi($3)); 
-                                                if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$1);}
+Assignment : IDENTIFIER '=' exp ';' {err = check($<structure.strval>1,scope, @1.first_line, $<structure.strval>3); 
+                                    if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1);}
+        | IDENTIFIER '[' T_INTEGER_VAL ']' '=' consttype ';' {err = check_arr($<structure.strval>1,scope, @1.first_line, $<structure.strval>6, atoi($<structure.strval>3)); 
+                                                if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1);}
         ;
         
 Input : T_CIN T_INS IDENTIFIER ';'
@@ -194,19 +205,25 @@ Input : T_CIN T_INS IDENTIFIER ';'
 Output : T_COUT T_EXT T_STRING_VAL ';'
         ;
 
-exp : exp '+' Term {$$ = $1 + $3;}
-    | exp '-' Term {$$ = $1 - $3;}
-    | Term {$$ = $1;}
+exp : exp '+' Term { int t1 = $<structure.intval>1;
+                     int t2 = $<structure.intval>3;
+                     if(((t1 == 1) || (t1 == 2) || (t1 == 4)) && ((t2 != 1) || (t2 != 2) || (t2 != 4)))
+                         printf("type mismatch\n");
+                     if(((t1 != 1) || (t1 != 2) || (t1 != 4)) && ((t2 == 1) || (t2 == 2) || (t2 == 5)))
+                         printf("type mismatch\n");                         
+                    }
+    | exp '-' Term {  }
+    | Term 
     ;
 
-Term : Term '*' Factor {$$ = $1 * $3;}
-    | Term '/' Factor {$$ = $1 / $3;}
-    | Factor {$$ = $1;}
+Term : Term '*' Factor 
+    | Term '/' Factor 
+    | Factor 
     ;
-Factor : Literal {$$ = $1;}
+Factor : Literal 
     ;
-Literal : IDENTIFIER  {err = check($1,scope,@1.first_line,"0"); if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$1); $$ = $1;}
-    | consttype  {$$ = $1;}
+Literal : IDENTIFIER  {err = check($<structure.strval>1,scope,@1.first_line,"0"); if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); $<structure.strval>$ = $<structure.strval>1;}
+    | consttype  
     ;
 
 consttype : T_INTEGER_VAL 
@@ -214,25 +231,23 @@ consttype : T_INTEGER_VAL
     | T_CHAR_VAL 
     | T_STRING_VAL 
     ;
-
-Type : T_INT {$$ = 1; type = 1;}
-	| T_DOUBLE {$$ = 2; type = 2;}
-	| T_VOID {$$ = 3; type = 3;}
-    | T_CHAR  {$$ = 4; type = 4;}
-    | T_STRING {$$ = 5; type = 5;}
-;
-
-increment : IDENTIFIER T_INC ';' {check($1,scope, @1.first_line,0);}
-    | T_INC IDENTIFIER ';' {check($2,scope, @2.first_line,0);}
-    ;
-decrement : IDENTIFIER T_DEC ';' {check($1,scope, @1.first_line,0);}
-    | T_DEC IDENTIFIER {check($2,scope, @2.first_line,0);}
+    
+Type : T_INT {printf("Declared type %d\n",$<structure.intval>$); }
+	| T_DOUBLE
+	| T_VOID 
+    | T_CHAR 
+    | T_STRING 
     ;
 
+increment : IDENTIFIER T_INC ';' {check($<structure.strval>1,scope, @1.first_line,0);}
+    | T_INC IDENTIFIER ';' {check($<structure.strval>2,scope, @2.first_line,0);}
+    ;
+decrement : IDENTIFIER T_DEC ';' {check($<structure.strval>1,scope, @1.first_line,0);}
+    | T_DEC IDENTIFIER {check($<structure.strval>2,scope, @2.first_line,0);}
+    ;
 
-
-Return : T_RETURN IDENTIFIER ';'
-    | T_RETURN consttype ';' 
+Return : T_RETURN IDENTIFIER ';' {$<structure.intval>$ = $<structure.intval>2;}
+    | T_RETURN consttype ';' {$<structure.intval>$ = $<structure.intval>2;}
     | T_RETURN ';' 
     ;
 
@@ -274,10 +289,10 @@ Default : T_DEFAULT ':' statements
 
 int main(){
     init();
-    yylloc.first_line=yylloc.last_line=1;
-    yylloc.first_column=yylloc.last_column=0;
+    // yylloc.first_line=yylloc.last_line=1;
+    // yylloc.first_column=yylloc.last_column=0;
     yyparse();
-
+    
     display();
 }
 
@@ -287,24 +302,13 @@ int yywrap()
   return(1);
 }
 
+// int main() {
 
+//      ptr = fopen("tokens.txt","w");
+     
+//      yylex();
 
-
-/*
-break : T_BREAK ';'
-    | 
-    ;
-C : T_CASE consttype ':' statements 
-    | T_CASE consttype ':' ';' break 
-    ;*/
-/*
-exp : '(' exp ')' {$$ = $2;}
-	| exp '+' exp {}
-	| exp '-' exp {}
-	| exp '*' exp {}
-	| exp '/' exp {}
-    | IDENTIFIER {err = check($1,scope,@1.first_line,"0");
-                        if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$1); $$ = $1;}
-    | consttype {$$ = $1;}
-	;
-*/
+//      fclose(ptr);
+     
+//      return 0;
+// }

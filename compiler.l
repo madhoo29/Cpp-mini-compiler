@@ -79,18 +79,17 @@ CLOSE_MULTICOMMENT \*\/
 
 "protected"   { printf("%s\n","T_PROTECTED"); return T_PROTECTED; }
 
-"int"     { printf("%s\n","T_INT"); return T_INT; }
+"int"     { printf("%s\n","T_INT"); yylval.structure.intval = 1;return T_INT; }
         
-"double"  { printf("%s\n","T_DOUBLE"); return T_DOUBLE;}
+"double"  { printf("%s\n","T_DOUBLE"); yylval.structure.intval = 2; return T_DOUBLE;}
            
 "bool"    { printf("%s\n","T_BOOL"); return T_BOOL; }
          
-"char"    { printf("%s\n","T_CHAR"); return T_CHAR; } 
+"char"    { printf("%s\n","T_CHAR"); yylval.structure.intval = 4; return T_CHAR; } 
 
-"string" { printf("%s\n","T_STRING"); return T_STRING;}
+"string" { printf("%s\n","T_STRING"); yylval.structure.intval = 5; return T_STRING;}
 
-"void" {  printf("%s\n","T_VOID"); return T_VOID; 
-}
+"void" {  printf("%s\n","T_VOID"); yylval.structure.intval = 3;return T_VOID; }
 
 "return" { printf("%s\n","T_RETURN"); return T_RETURN;
       }
@@ -128,31 +127,33 @@ CLOSE_MULTICOMMENT \*\/
                     new[i] = yytext[i];
                   }
                   new[30] = '\0';
-                  yylval.strval = new;
+                  yylval.structure.strval = new;
                   return IDENTIFIER;
                 }
-                yylval.strval = strdup(yytext);
+                yylval.structure.strval = strdup(yytext);
                 return IDENTIFIER;
     }
 
 {CCONST}        {
                   printf("%s\n","T_CHAR_VAL");
-                    yylval.strval = strdup(yytext);
+                   yylval.structure.intval = 4;
+                    yylval.structure.strval = strdup(yytext);                   
                     return T_CHAR_VAL;}
 
 (<|\"){LETTER}({LETTER}|{DIGIT})*"\.h"(>|\")  { 
                           printf("%s\n","T_HEADER");
-                          yylval.strval = strdup(yytext);
+                          yylval.structure.strval = strdup(yytext);
                           return T_HEADER;} 
                     
 
 
 {STRING}          {       printf("%s\n","T_STRING_VAL");
-                          yylval.strval = strdup(yytext);
+                         yylval.structure.intval = 5;
+                          yylval.structure.strval = strdup(yytext);                           
                           return T_STRING_VAL;}
 
 {NOT_STRING}      { yyerror("String with erroneous newline") ;
-                          yylval.strval = " ";
+                          yylval.structure.strval = " ";
                           return T_STRING_VAL;}
 
 
@@ -160,12 +161,16 @@ CLOSE_MULTICOMMENT \*\/
 
 
 {ICONST}            { 
-                          yylval.strval = strdup(yytext);
-                          printf("%s\n","T_INTEGER_VAL");    
+                          yylval.structure.intval = 1;
+                          yylval.structure.strval = strdup(yytext); 
+
+                          //printf("%s, %d\n","T_INTEGER_VAL", yylval.structure.intval);    
                           return T_INTEGER_VAL;}
 
-{DOUBLE}           {      
-                          yylval.strval = strdup(yytext); 
+{DOUBLE}           {   
+                        yylval.structure.intval = 2;   
+                          yylval.structure.strval = strdup(yytext);
+                          
                           return T_FLOAT_VAL;}
             
 {SINGLE_CHAR_OPERATORS} {return *yytext; }
@@ -179,3 +184,4 @@ CLOSE_MULTICOMMENT \*\/
 
 
 %%
+
