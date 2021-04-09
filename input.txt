@@ -1,30 +1,39 @@
 #include<stdio.h>
+
 int main(){
-  
-  
-    int a,b,c;
-    int k[10];
-    int l[1]={1,2,3,4,5};
-    l[2]=5;
-    int h[5]={4};
-    
+  int bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=80;
+  double jj=10.2;
+  double d=10.2E-2;
+  int b=10;
 
-    int d=10.2E-2;
-    int e;
-    e = e + 2;
-    double new_variable = 2.3;
+  while(b<15)
+  {
+    int x=6;
+    b=b+1;
+    ;
+    while(a+b!=1)
+    {
+      a--;
+      b=a*b;
+    }
+  }
 
-    switch(1) {
-  case 1:
-    // code block
-    break;
-  case 2:
-    // code block
-    a=10;
-    break;
-  default:
-  a=20;
-    // code block
-}
+  int arr[5]={1,2,3};
+  arr[4]=50;
+  int c;
+  c=a*b;
 
+  switch(1) 
+  {
+    case 1:
+      b=23;
+      break;
+    case 2:
+      a=10;
+      break;
+    default:
+      a=20;
+  }
+
+   
 }

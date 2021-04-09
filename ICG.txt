@@ -1,0 +1,13 @@
+L1 :
+if T0 = goto L2
+T1 = b + 1
+6 = T1L3 :
+T2 = + + b
+if T3 = goto L4
+T4 = a * b
+1 = T4goto L2
+L5: 
+goto L2
+L7: 
+T5 = a * b
+5 = T51 = 23= = 10= = 20
