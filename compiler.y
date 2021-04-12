@@ -11,6 +11,7 @@
     int type;
     int idx = 0;
     FILE * fp;
+    FILE * qptr;
     char* id;
       int top=-1;
     void while1();
@@ -214,7 +215,7 @@ Listvariables : Listvariables ',' IDENTIFIER {
                         err = check($<structure.strval>1,scope,@1.first_line,"0");
                         if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); }}
         ;
-Assignment : IDENTIFIER {push_t();} '=' {push_t();} exp ';' { codegen_assign(); 
+Assignment : IDENTIFIER {push_t($<structure.strval>1);} '=' {push_t("=");} exp ';' { codegen_assign(); 
                                     err = check($<structure.strval>1,scope, @1.first_line, $<structure.strval>3); 
                                     if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1);}
         | IDENTIFIER '[' T_INTEGER_VAL ']' '=' consttype ';' {err = check_arr($<structure.strval>1,scope, @1.first_line, $<structure.strval>6, atoi($<structure.strval>3)); 
@@ -227,26 +228,26 @@ Input : T_CIN T_INS IDENTIFIER ';'
 Output : T_COUT T_EXT T_STRING_VAL ';'
         ;
 
-exp : exp '+' {push_t();} Term { codegen(); 
+exp : exp '+' {push_t("+");} Term { codegen(); 
                      int t1 = $<structure.intval>1;
-                     int t2 = $<structure.intval>3;
+                     int t2 = $<structure.intval>4;
                      if(((t1 == 1) || (t1 == 2) || (t1 == 4)) && ((t2 != 1) || (t2 != 2) || (t2 != 4)))
                          printf("type mismatch\n");
                      if(((t1 != 1) || (t1 != 2) || (t1 != 4)) && ((t2 == 1) || (t2 == 2) || (t2 == 5)))
                          printf("type mismatch\n");                         
                     }
-    | exp '-' {push_t();} Term { codegen();  }
+    | exp '-' {push_t("-");} Term { codegen();  }
     | Term 
     ;
 
-Term : Term '*' {push_t();} Factor { codegen();  }
-    | Term '/' {push_t();} Factor  { codegen();  }
+Term : Term '*' {push_t("*");} Factor { codegen();  }
+    | Term '/' {push_t("/");} Factor  { codegen();  }
     | Factor 
     ;
 Factor : Literal 
     ;
-Literal : IDENTIFIER  {push_t(); err = check($<structure.strval>1,scope,@1.first_line,"0"); if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); $<structure.strval>$ = $<structure.strval>1;}
-    | consttype  {push_t();}
+Literal : IDENTIFIER  {push_t($<structure.strval>1); err = check($<structure.strval>1,scope,@1.first_line,"0"); if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); $<structure.strval>$ = $<structure.strval>1;}
+    | consttype  {push_t($<structure.strval>1);}
     ;
 
 consttype : T_INTEGER_VAL 
@@ -280,13 +281,19 @@ While : T_WHILE {while1();} '(' check ')' {while2();} compound_stmt {while3();}
     
 check : consttype 
     | IDENTIFIER
-    | exp relop exp
+    | exp relop exp {codegen_assigna();}
     | T_TRUE
     | T_FALSE
     ;
 
-
-relop : '<' | '>' | T_NE | T_EQ ; 
+// relop : '<' | '>'
+//     ;
+relop : '<' {push_t("<");push_t(" ");} 
+        | '>' {push_t(">");push_t(" ");}
+        | T_NE {push_t("!");push_t("=");}
+        | T_EQ {push_t("=");push_t("=");}; 
+        | T_LE {push_t("<"); push_t("=");};
+        | T_GE {push_t(">"); push_t("=");};
 
 
 Switch : T_SWITCH '(' exp ')' '{' Cases '}' 
@@ -327,17 +334,21 @@ int flag_set = 1;
 int main(){
     init();
     fp = fopen("ICG.txt","w");
+    qptr = fopen("Quadruples.txt","w");
     
     
     if(!yyparse())  //yyparse-> 0 if success
     {
         printf("Parsing Complete\n");
         printf("---------------------Quadruples-------------------------\n\n");
+        fprintf(qptr,"Quadruples\n\n");
         printf("Operator \t Arg1 \t\t Arg2 \t\t Result \n");
+        fprintf(qptr,"Operator \t Arg1 \t\t Arg2 \t\t Result \n");
         int i;
         for(i=0;i<quadlen;i++)
         {
             printf("%-8s \t %-8s \t %-8s \t %-6s \n",q[i].op,q[i].arg1,q[i].arg2,q[i].res);
+            fprintf(qptr,"%-8s \t %-8s \t %-8s \t %-6s \n",q[i].op,q[i].arg1,q[i].arg2,q[i].res);
         }
     }
     
@@ -351,15 +362,12 @@ int yywrap()
 }
 
 
-
-
-
 void while1()
 {
 
     l_while = lnum;
-    printf("L%d: \n",lnum++);
-    fprintf(fp, "L%d :\n",lnum++);
+    printf("\nL%d: \n",lnum++);
+    fprintf(fp, "\nL%d :\n",lnum-1);
     q[quadlen].op = (char*)malloc(sizeof(char)*6);
     q[quadlen].arg1 = NULL;
     q[quadlen].arg2 = NULL;
@@ -378,6 +386,7 @@ void while2()
  sprintf(tmp_i, "%d", temp_i);
  strcat(temp,tmp_i);
  printf("%s = not %s\n",temp,st[top]);
+ fprintf(fp,"%s = not %s\n",temp,st[top]);
     q[quadlen].op = (char*)malloc(sizeof(char)*4);
     q[quadlen].arg1 = (char*)malloc(sizeof(char)*strlen(st[top]));
     q[quadlen].arg2 = NULL;
@@ -387,7 +396,7 @@ void while2()
     strcpy(q[quadlen].res,temp);
     quadlen++;
     printf("if %s goto L%d\n",temp,lnum);
-    fprintf(fp, "if %s = goto L%d\n",temp,lnum);
+    fprintf(fp, "if %s goto L%d\n",temp,lnum);
 
     q[quadlen].op = (char*)malloc(sizeof(char)*3);
     q[quadlen].arg1 = (char*)malloc(sizeof(char)*strlen(temp));
@@ -406,8 +415,8 @@ void while2()
 void while3()
 {
 
-printf("goto L%d \n",l_while);
-fprintf(fp,"goto L%d\n",l_while);
+printf("\ngoto L%d \n",l_while);
+fprintf(fp,"\ngoto L%d\n",l_while);
 q[quadlen].op = (char*)malloc(sizeof(char)*5);
     q[quadlen].arg1 = NULL;
     q[quadlen].arg2 = NULL;
@@ -418,16 +427,21 @@ q[quadlen].op = (char*)malloc(sizeof(char)*5);
     char l[]="L";
     strcpy(q[quadlen].res,strcat(l,x));
     quadlen++;
-    printf("L%d: \n",lnum++);
-    fprintf(fp,"L%d: \n",lnum++);
+    printf("\nL%d: \n",lnum); //change made from lnum++ to lnum   
+    fprintf(fp,"\nL%d: \n",lnum);
+    //change from lnum-1 to lnum   
     q[quadlen].op = (char*)malloc(sizeof(char)*6);
     q[quadlen].arg1 = NULL;
     q[quadlen].arg2 = NULL;
     q[quadlen].res = (char*)malloc(sizeof(char)*(lnum+2));
+ 
+    printf("here1 %d\n",quadlen);     
     strcpy(q[quadlen].op,"Label");
-    char x1[10];
+ 
+    printf("here2\n");   char x1[10];
     sprintf(x1,"%d",lnum-1);
-    char l1[]="L";
+ 
+       char l1[]="L";
     strcpy(q[quadlen].res,strcat(l1,x1));
     quadlen++;
 }
@@ -454,9 +468,13 @@ void codegen()
 temp_i++;
 }
 
-void push_t()
+
+
+void push_t(char* text)
 {
-    strcpy(st[++top],yytext);
+    printf("pushed : %s\n",text);
+    strcpy(st[++top],text);
+    
 }
 
 void codegen_assigna()
@@ -506,16 +524,22 @@ strcpy(st[++top],temp);
 
 void codegen_assign()
 {
-    printf("%s = %s\n",st[top-3],st[top]);
-    fprintf(fp, "%s = %s",st[top-3],st[top]);
+    printf(" %s = %s\n",st[top-2],st[top]);
+    fprintf(fp,"%s = %s",st[top-2],st[top]);
     q[quadlen].op = (char*)malloc(sizeof(char));
     q[quadlen].arg1 = (char*)malloc(sizeof(char)*strlen(st[top]));
     q[quadlen].arg2 = NULL;
-    q[quadlen].res = (char*)malloc(sizeof(char)*strlen(st[top-3]));
+    q[quadlen].res = (char*)malloc(sizeof(char)*strlen(st[top-2]));
     strcpy(q[quadlen].op,"=");
     strcpy(q[quadlen].arg1,st[top]);
-    strcpy(q[quadlen].res,st[top-3]);
+    strcpy(q[quadlen].res,st[top-2]);
+    printf("res : %s\n", q[quadlen].res);
     quadlen++;
     top-=2;
 }
+
+// push_relop()
+// {
+// strcpy(st[++top],yytext);
+// }
 
