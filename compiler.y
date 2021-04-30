@@ -1,6 +1,7 @@
 %{
     #include<stdio.h>
     #include<stdlib.h>
+    #include<string.h>
     #include "symboltable.c"
 
     int yylex();
@@ -13,30 +14,45 @@
     FILE * fp;
     FILE * qptr;
     char* id;
-      int top=-1;
+    int top=-1;
+    int top2 = -1;
     void while1();
     void while2();
     void while3();
+    void switch1();
+    void test();
+    void next();
+    void casestart();
+    void caseend();
     void push_t();
+    void push_op(char*);
     void codegen();
     void codegen_assign();
     void codegen_assigna();
+    void arg1();
+    void funcall();
+    void fun1();
+    void fun2();
+    int num_cases = 0;
+    char cases[20];
+    int arg_count = 0;
 
-      typedef struct quadruples
-  {
-    char *op;
-    char *arg1;
-    char *arg2;
-    char *res;
-  }quad;
-  int quadlen = 0;
-  quad q[100];
+    typedef struct quadruples
+    {
+        char* op;
+        sym* arg1;
+        sym* arg2;
+        sym* res;
+    } quad;
 
-void yyerror(const char *str)
-{
-    fprintf(stderr,"Error at line: %d %s %s\n",yylineno,str,yytext);
-}
-
+    int quadlen = 0;
+    quad q[100];
+    sym* case_var;
+ 
+    void yyerror(const char *str)
+    {
+        fprintf(stderr,"Error at line: %d %s %s\n",yylineno,str,yytext);
+    }
 
 
 %}
@@ -48,9 +64,8 @@ void yyerror(const char *str)
 %token T_CHAR_VAL T_FLOAT_VAL T_INTEGER_VAL T_STRING_VAL IDENTIFIER
 %token NOT_STRING
 
-%define parse.error verbose
-// %error-verbose
-
+//%define parse.error verbose
+%error-verbose
 
 %right '='
 %left T_LOGICAL_OR
@@ -61,7 +76,6 @@ void yyerror(const char *str)
 %left '*' '/' '%'
 %right '!'
 
-
 %token T_INC T_DEC
 %token T_TRUE T_FALSE
 %token T_RETURN T_CONST T_AUTO T_CLASS T_PRIVATE T_PUBLIC T_PROTECTED
@@ -69,7 +83,6 @@ void yyerror(const char *str)
 %start BEGIN
 %type <intval> T_INT T_STRING T_DOUBLE T_VOID T_BOOL T_CHAR 
 %type <strval> T_FLOAT_VAL T_INTEGER_VAL T_CHAR_VAL T_STRING_VAL IDENTIFIER exp consttype Listvariables Arraytype Term Factor Literal
-// %type <intval> T_FLOAT_VAL T_INTEGER_VAL T_CHAR_VAL T_STRING_VAL IDENTIFIER exp consttype Listvariables Arraytype Term Factor Literal
 %type <intval> Type
 
 %union {  
@@ -106,16 +119,16 @@ main: T_INT T_MAIN compound_stmt
       | 
       ;
 
-statements:statements stmt {$<structure.intval>$ = $<structure.intval>2; printf(" statements type %d\n",$<structure.intval>$) ;}
+statements:statements stmt {$<structure.intval>$ = $<structure.intval>2;}
     |
     ;
     
-stmt:compound_stmt {$<structure.intval>$ = $<structure.intval>1; printf(" cmpd stmt type %d\n",$<structure.intval>$) ;}
-    |single_stmt {$<structure.intval>$ = $<structure.intval>1; printf(" single stmt type %d\n",$<structure.intval>$) ;}
+stmt:compound_stmt {$<structure.intval>$ = $<structure.intval>1;}
+    |single_stmt {$<structure.intval>$ = $<structure.intval>1; }
     ;
 
  /* The function body is covered in braces and has multiple statements. */
-compound_stmt :'{' {scope++;enter_scope(scope); } statements   '}'  {exit_scope(scope + 1); scope--;}  {$<structure.intval>$ = $<structure.intval>3;printf("The compound statemetn in funcdef %d\n",$<structure.intval>$) ;}
+compound_stmt : '{' {scope++;enter_scope(scope); } statements   '}'  {exit_scope(scope + 1); scope--;}  {$<structure.intval>$ = $<structure.intval>3;}
     ;
 
 
@@ -146,39 +159,62 @@ access : T_PUBLIC ':'
     | T_PROTECTED ':'
     ;
 
-Function_Dec : Type IDENTIFIER '(' Parameters ')' compound_stmt  {int t1 = $<structure.intval>1;
+Function_Dec : Type IDENTIFIER {
+                err = lookup($<structure.strval>2, scope, $<structure.intval>1, @2.first_line); 
+                if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>2);
+                push_t();
+                fun1();
+                }
+
+                '(' Parameters ')' compound_stmt  {int t1 = $<structure.intval>1;
                                                                   int t2 = $<structure.intval>6;
-                                                                  printf("t1 : %d \n t2: %d\n",t1,t2);
                                                                   if (t1!=t2)
-                                                                 printf("return type does not match function");}
+                                                                 printf("return type does not match function");
+                                                                 fun2();
+                                                                 }
+            ;
 
 Parameters :  Type IDENTIFIER Parameters 
             |',' Parameters
             |
             ;
 
-Function_call : IDENTIFIER '(' Arguments ')' ';'
+Function_call : IDENTIFIER { err = check($<structure.strval>1,scope,@1.first_line,"0"); 
+                        if(!err){
+                            printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); 
+                        }
+                        else
+                            push_t();}
+                        '(' Arguments {if(arg_count == 1) arg1();} ')' ';'  {if(err) funcall();}
 
-Arguments : Arguments ',' exp
-        | exp   
+Arguments : Arguments ',' exp {arg_count++; arg1();}
+        | exp   {arg_count++;}
+        |
         ;
 
 Print : T_PRINT '(' T_STRING_VAL ')' ';'
         
-Decleration : Type IDENTIFIER '=' exp ';' { 
+Decleration : Type IDENTIFIER '=' {push_op("=");} exp ';' { 
+                                            if($<structure.intval>1 != $<structure.intval>5)
+                                                printf("Error at line: %d WARNING : Type mismatch\n",@1.first_line);
                                             err = lookup($<structure.strval>2,scope, $<structure.intval>1, @2.first_line); 
                                             if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>2);
                                             else{
-                                            err = check($<structure.strval>2,scope,@2.first_line,$<structure.strval>4);  
+                                            
+                                            err = check($<structure.strval>2,scope,@2.first_line,$<structure.strval>5);  
                                             if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>2);
                                             }
+                                            push_t();
+                                            codegen_assign(); 
                                             }  
         
         | Type Listvariables ';' 
         | ArrayDec 
         ;
 
-ArrayDec : Type IDENTIFIER '[' exp ']' ';' { err = lookup_arr($<structure.strval>2,scope, $<structure.intval>1, @2.first_line, $<structure.strval>4); 
+ArrayDec : Type IDENTIFIER '[' exp ']' ';' { 
+
+                                            err = lookup_arr($<structure.strval>2,scope, $<structure.intval>1, @2.first_line, $<structure.strval>4); 
                                             if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>2);
                                            }
             | Type IDENTIFIER '[' exp ']' { err = lookup_arr($<structure.strval>2,scope, $<structure.intval>1, @2.first_line, $<structure.strval>4); 
@@ -188,10 +224,12 @@ ArrayDec : Type IDENTIFIER '[' exp ']' ';' { err = lookup_arr($<structure.strval
                                             idx = 0;
                                             
 
-                                           } '=' '{' ArrayObj '}' ';' 
+                                           } '=' '{' ArrayObj '}' ';' {
+                                                if($<structure.intval>1 != $<structure.intval>9)
+                                                printf("Error at line: %d WARNING : Type mismatch\n",@1.first_line); }
 
 
-ArrayObj : ArrayObj ',' Arraytype {check_arr(id,scope,@3.first_line,$<structure.strval>3,idx++);  }
+ArrayObj : ArrayObj ',' Arraytype {check_arr(id,scope,@3.first_line,$<structure.strval>3,idx++);   }
         | Arraytype  {check_arr(id,scope,@1.first_line,$<structure.strval>1,idx++);  }
         | 
         ;
@@ -201,25 +239,31 @@ Arraytype : T_INTEGER_VAL
     ;
 
 
-Listvariables : Listvariables ',' IDENTIFIER {
-												err = lookup($<structure.strval>3,scope, type, @3.first_line);
+Listvariables : Listvariables ',' IDENTIFIER {  err = lookup($<structure.strval>3,scope, type, @3.first_line);
                                                 if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>3);
                                                 else{
                                                 err = check($<structure.strval>3,scope,@3.first_line,"0");
-                                                if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>3); }}
+                                                if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>3); }
+                                            }
         | IDENTIFIER {
-			            
                         err = lookup($<structure.strval>1,scope, type, @1.first_line);
                         if(!err) printf("Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>1);
                         else{
                         err = check($<structure.strval>1,scope,@1.first_line,"0");
-                        if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); }}
+                        if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); }
+}
         ;
-Assignment : IDENTIFIER {push_t($<structure.strval>1);} '=' {push_t("=");} exp ';' { codegen_assign(); 
-                                    err = check($<structure.strval>1,scope, @1.first_line, $<structure.strval>3); 
-                                    if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1);}
+Assignment : IDENTIFIER '=' {push_op("=");} exp ';' { 
+                                    if($<structure.intval>1 != $<structure.intval>4)
+                                        printf("Error at line: %d WARNING : Type mismatch\n",@1.first_line);
+                                    err = check($<structure.strval>1,scope, @1.first_line, "0"); 
+                                    if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1);
+                                    push_t();
+                                    codegen_assign(); 
+}
         | IDENTIFIER '[' T_INTEGER_VAL ']' '=' consttype ';' {err = check_arr($<structure.strval>1,scope, @1.first_line, $<structure.strval>6, atoi($<structure.strval>3)); 
-                                                if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1);}
+                                                if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1);
+}
         ;
         
 Input : T_CIN T_INS IDENTIFIER ';'
@@ -228,26 +272,31 @@ Input : T_CIN T_INS IDENTIFIER ';'
 Output : T_COUT T_EXT T_STRING_VAL ';'
         ;
 
-exp : exp '+' {push_t("+");} Term { codegen(); 
-                     int t1 = $<structure.intval>1;
-                     int t2 = $<structure.intval>4;
-                     if(((t1 == 1) || (t1 == 2) || (t1 == 4)) && ((t2 != 1) || (t2 != 2) || (t2 != 4)))
-                         printf("type mismatch\n");
-                     if(((t1 != 1) || (t1 != 2) || (t1 != 4)) && ((t2 == 1) || (t2 == 2) || (t2 == 5)))
-                         printf("type mismatch\n");                         
+exp : exp {if(link->arr != NULL) yyerror("Invalid operation on given data type\n"); } '+' {push_op("+");} Term { 
+                    codegen(); 
+                    int t1 = $<structure.intval>1;
+                    int t2 = $<structure.intval>5;
+                    if(((t1 == 1) || (t1 == 2) || (t1 == 4)) && ((t2 != 1) || (t2 != 2) || (t2 != 4)))
+                    yyerror("Type mismatch\n");
+                    if(((t1 != 1) || (t1 != 2) || (t1 != 4)) && ((t2 == 1) || (t2 == 2) || (t2 == 5)))
+                    yyerror("Type mismatch\n");   
                     }
-    | exp '-' {push_t("-");} Term { codegen();  }
+    | exp {if(link->arr != NULL) yyerror("Invalid operation on given data type\n"); } '-' {push_op("-");} Term { codegen();  }
     | Term 
     ;
 
-Term : Term '*' {push_t("*");} Factor { codegen();  }
-    | Term '/' {push_t("/");} Factor  { codegen();  }
+Term : Term {if(link->arr != NULL) yyerror("Invalid operation on given data type\n");} '*' {push_op("*");} Factor { codegen();  }
+    | Term {if(link->arr != NULL) yyerror("Invalid operation on given data type\n");} '/' {push_op("/");} Factor  { codegen();  }
     | Factor 
     ;
 Factor : Literal 
     ;
-Literal : IDENTIFIER  {push_t($<structure.strval>1); err = check($<structure.strval>1,scope,@1.first_line,"0"); if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); $<structure.strval>$ = $<structure.strval>1;}
-    | consttype  {push_t($<structure.strval>1);}
+Literal : IDENTIFIER  {
+                        err = check($<structure.strval>1,scope,@1.first_line,"0"); if(!err) printf("Undefined error : %s has not been declared in this scope.\n",$<structure.strval>1); $<structure.strval>$ = $<structure.strval>1;
+                        push_t(); 
+                        }
+    | consttype  { link = create_var($<structure.strval>1,-1,$<structure.intval>1,-1);
+        push_t();}
     ;
 
 consttype : T_INTEGER_VAL 
@@ -255,19 +304,20 @@ consttype : T_INTEGER_VAL
     | T_CHAR_VAL 
     | T_STRING_VAL 
     ;
+
     
-Type : T_INT {printf("Declared type %d\n",$<structure.intval>$); }
-	| T_DOUBLE
-	| T_VOID 
-    | T_CHAR 
-    | T_STRING 
+Type : T_INT {type = 1; }
+	| T_DOUBLE {type = 2;}
+	| T_VOID {type = 3;}
+    | T_CHAR {type = 4;}
+    | T_STRING {type = 5;}
     ;
 
-increment : IDENTIFIER T_INC ';' {check($<structure.strval>1,scope, @1.first_line,0);}
-    | T_INC IDENTIFIER ';' {check($<structure.strval>2,scope, @2.first_line,0);}
+increment : IDENTIFIER T_INC ';' {check($<structure.strval>1,scope, @1.first_line,0); }
+    | T_INC IDENTIFIER ';' {check($<structure.strval>2,scope, @2.first_line,0); }
     ;
-decrement : IDENTIFIER T_DEC ';' {check($<structure.strval>1,scope, @1.first_line,0);}
-    | T_DEC IDENTIFIER {check($<structure.strval>2,scope, @2.first_line,0);}
+decrement : IDENTIFIER T_DEC ';' {check($<structure.strval>1,scope, @1.first_line,0); }
+    | T_DEC IDENTIFIER {check($<structure.strval>2,scope, @2.first_line,0); }
     ;
 
 Return : T_RETURN IDENTIFIER ';' {$<structure.intval>$ = $<structure.intval>2;}
@@ -275,39 +325,38 @@ Return : T_RETURN IDENTIFIER ';' {$<structure.intval>$ = $<structure.intval>2;}
     | T_RETURN ';' 
     ;
 
-
-While : T_WHILE {while1();} '(' check ')' {while2();} compound_stmt {while3();}
+While : T_WHILE {while1();} '(' global_check ')' {while2();} compound_stmt {while3();}
 	;
     
-check : consttype 
+global_check : consttype 
     | IDENTIFIER
     | exp relop exp {codegen_assigna();}
     | T_TRUE
     | T_FALSE
     ;
 
-// relop : '<' | '>'
-//     ;
-relop : '<' {push_t("<");push_t(" ");} 
-        | '>' {push_t(">");push_t(" ");}
-        | T_NE {push_t("!");push_t("=");}
-        | T_EQ {push_t("=");push_t("=");}; 
-        | T_LE {push_t("<"); push_t("=");};
-        | T_GE {push_t(">"); push_t("=");};
+relop : '<' {push_op("<");push_op(" ");} 
+        | '>' {push_op(">");push_op(" ");}
+        | T_NE {push_op("!");push_op("=");}
+        | T_EQ {push_op("=");push_op("=");}; 
+        | T_LE {push_op("<"); push_op("=");};
+        | T_GE {push_op(">"); push_op("=");};
 
-
-Switch : T_SWITCH '(' exp ')' '{' Cases '}' 
+constcases : T_INTEGER_VAL
+    | T_CHAR_VAL
+    ;
+Switch : T_SWITCH {switch1();} '(' exp {case_var = link;} ')' '{' Cases '}' {test(); next();} 
 ;
 
 Cases : Case
     | Case Default
 ;
 
-Case : C 
+Case : C    //count number of cases;
     | Case C 
 ;
 
-C : T_CASE consttype ':' statements T_BREAK ';'
+C : T_CASE  constcases {cases[num_cases] = $<structure.strval>2[0]; num_cases++; casestart();} ':' statements  T_BREAK ';'   {caseend();}
     ;
 
 
@@ -317,27 +366,32 @@ Default : T_DEFAULT ':' statements
 
 %%
 #include<ctype.h>
-char st[100][100];
+char st1[100][7];
+sym* st2[100];
 
 char i_[2]="0";
 int temp_i=0;
 char tmp_i[3];
-char temp[2]="t";
-int label[20];
+char temp[5]="t";
+
 int lnum=0;
 int ltop=0;
 int abcd=0;
 int l_while=0;
+int l_switch=0;
+int label = 0;
 int l_for=0;
 int flag_set = 1;
+int snum = 0;
+int nnum = 0;
+
 
 int main(){
     init();
     fp = fopen("ICG.txt","w");
     qptr = fopen("Quadruples.txt","w");
-    
-    
-    if(!yyparse())  //yyparse-> 0 if success
+       
+    if(!yyparse()) 
     {
         printf("Parsing Complete\n");
         printf("---------------------Quadruples-------------------------\n\n");
@@ -347,12 +401,27 @@ int main(){
         int i;
         for(i=0;i<quadlen;i++)
         {
-            printf("%-8s \t %-8s \t %-8s \t %-6s \n",q[i].op,q[i].arg1,q[i].arg2,q[i].res);
-            fprintf(qptr,"%-8s \t %-8s \t %-8s \t %-6s \n",q[i].op,q[i].arg1,q[i].arg2,q[i].res);
+            char *a1, *a2, *r;
+            if(q[i].arg1 != NULL) 
+                a1 = q[i].arg1->name;
+            else
+                a1 = (char*)q[i].arg1;
+            if(q[i].arg2 != NULL) 
+                a2 = q[i].arg2->name;
+            else
+                a2 = (char*)q[i].arg2;
+            if(q[i].res != NULL) 
+                r = q[i].res->name;
+            else
+                r = (char*)q[i].res;
+
+            printf("%-8s \t %-8s \t %-8s \t %-6s \n",q[i].op,a1,a2,r);
+            fprintf(qptr,"%-8s \t %-8s \t %-8s \t %-6s \n",q[i].op,a1,a2,r);
         }
     }
-    
     display();
+    fclose(qptr);
+    fclose(fp);
 }
 
 
@@ -361,88 +430,193 @@ int yywrap()
   return(1);
 }
 
-
-void while1()
+void test()
 {
+    fprintf(fp,"test%d:\n",snum-1);
 
-    l_while = lnum;
-    printf("\nL%d: \n",lnum++);
-    fprintf(fp, "\nL%d :\n",lnum-1);
+    q[quadlen].op = (char*)malloc(sizeof(char)*6);
+    q[quadlen].arg1 = NULL;
+    q[quadlen].arg2 = NULL;   
+    strcpy(q[quadlen].op,"Label");
+    char x1[10];
+    sprintf(x1,"%d",snum-1);
+    char l1[11]="test";
+    strcat(l1,x1);
+    err = lookup(l1,scope,type,quadlen);
+    q[quadlen].res = link;
+    quadlen++;
+
+    int i;
+    sym* t = case_var;
+    for(i=0;i<num_cases;i++)
+    {
+        strcpy(temp,"T");
+        sprintf(tmp_i, "%d", temp_i);
+        strcat(temp,tmp_i);
+        fprintf(fp, "%s = %s == %c\n",temp,t->name,cases[i]);        
+        q[quadlen].op = (char*)malloc(sizeof(char)*3);
+        strcpy(q[quadlen].op,"==");
+        q[quadlen].arg1 = t;
+        char x[10];
+        sprintf(x,"%c",cases[i]);
+        err = lookup(x,scope,type,quadlen);
+        q[quadlen].arg2 = link;
+        err = lookup(temp,scope,type,quadlen);
+        q[quadlen].res = link;        
+        quadlen++;
+
+        fprintf(fp,"if %s goto L%d\n",temp,lnum - num_cases + i);
+        q[quadlen].op = (char*)malloc(sizeof(char)*3);
+        q[quadlen].arg1 = link;
+        q[quadlen].arg2 = NULL;        
+        strcpy(q[quadlen].op,"if");
+        sprintf(x,"%d",lnum - num_cases + i);
+        char l[11]="L";
+        strcat(l,x);
+        err = lookup(l,scope,type,quadlen);
+        q[quadlen].res = link;
+        st2[top2] = link;
+        quadlen++;
+        temp_i++;
+    }   
+}
+
+void next()
+{
+    fprintf(fp,"next%d:\n",nnum++);
     q[quadlen].op = (char*)malloc(sizeof(char)*6);
     q[quadlen].arg1 = NULL;
     q[quadlen].arg2 = NULL;
-    q[quadlen].res = (char*)malloc(sizeof(char)*(lnum+2));
+    strcpy(q[quadlen].op,"Label");
+    char x1[10];
+    sprintf(x1,"%d",nnum-1);
+    char l1[11]="next";
+    strcat(l1,x1);
+    err = lookup(l1,scope,type,quadlen);
+    q[quadlen].res = link;
+    quadlen++;
+    num_cases = 0;
+}
+
+void casestart()
+{
+    l_switch = lnum;
+    fprintf(fp, "L%d :\n",lnum++);
+    q[quadlen].op = (char*)malloc(sizeof(char)*6);
+    q[quadlen].arg1 = NULL;
+    q[quadlen].arg2 = NULL;   
+    strcpy(q[quadlen].op,"Label");
+    char x1[10];
+    sprintf(x1,"%d",lnum-1);
+    char l1[11]="L";
+    strcat(l1,x1);
+    err = lookup(l1,scope,type,quadlen);
+    q[quadlen].res = link;
+    quadlen++;   
+}
+
+void caseend()
+{
+    fprintf(fp,"goto next%d\n",nnum);
+    q[quadlen].op = (char*)malloc(sizeof(char)*5);
+    q[quadlen].arg1 = NULL;
+    q[quadlen].arg2 = NULL;
+    strcpy(q[quadlen].op,"goto");
+    char x[10];
+    sprintf(x,"%d",nnum);
+    char l[11]="next";
+    strcat(l,x);
+    err = lookup(l,scope,type,quadlen);
+    q[quadlen].res = link;
+    quadlen++;
+}
+
+void switch1()
+{
+    fprintf(fp,"goto test%d\n",snum++);
+    q[quadlen].op = (char*)malloc(sizeof(char)*5);
+    q[quadlen].arg1 = NULL;
+    q[quadlen].arg2 = NULL;
+    strcpy(q[quadlen].op,"goto");
+    char x[10];
+    sprintf(x,"%d",snum-1);
+    char l[11]="test";
+    strcat(l,x);
+    err = lookup(l,scope,type,quadlen);
+    q[quadlen].res = link;
+    quadlen++;
+}
+
+void while1()
+{
+    l_while = lnum;
+    fprintf(fp, "L%d :\n",lnum++);
+    q[quadlen].op = (char*)malloc(sizeof(char)*6);
+    q[quadlen].arg1 = NULL;
+    q[quadlen].arg2 = NULL;
     strcpy(q[quadlen].op,"Label");
     char x[10];
     sprintf(x,"%d",lnum-1);
-    char l[]="L";
-    strcpy(q[quadlen].res,strcat(l,x));
+    char l[11]="L";
+    strcat(l,x);
+    err = lookup(l,scope,type,quadlen);
+    q[quadlen].res = link;
     quadlen++;
 }
 
 void while2()
 {
- strcpy(temp,"T");
- sprintf(tmp_i, "%d", temp_i);
- strcat(temp,tmp_i);
- printf("%s = not %s\n",temp,st[top]);
- fprintf(fp,"%s = not %s\n",temp,st[top]);
+    strcpy(temp,"T");
+    sprintf(tmp_i, "%d", temp_i);
+    strcat(temp,tmp_i);
+    fprintf(fp,"%s = not %s\n",temp,st2[top2]->name);
     q[quadlen].op = (char*)malloc(sizeof(char)*4);
-    q[quadlen].arg1 = (char*)malloc(sizeof(char)*strlen(st[top]));
     q[quadlen].arg2 = NULL;
-    q[quadlen].res = (char*)malloc(sizeof(char)*strlen(temp));
     strcpy(q[quadlen].op,"not");
-    strcpy(q[quadlen].arg1,st[top]);
-    strcpy(q[quadlen].res,temp);
+    q[quadlen].arg1 = st2[top2];
+    err = lookup(temp,scope,type,quadlen);
+    q[quadlen].res = link;
     quadlen++;
-    printf("if %s goto L%d\n",temp,lnum);
     fprintf(fp, "if %s goto L%d\n",temp,lnum);
-
     q[quadlen].op = (char*)malloc(sizeof(char)*3);
-    q[quadlen].arg1 = (char*)malloc(sizeof(char)*strlen(temp));
-    q[quadlen].arg2 = NULL;
-    q[quadlen].res = (char*)malloc(sizeof(char)*(lnum+2));
+    q[quadlen].arg1 = link;
+    q[quadlen].arg2 = NULL; 
     strcpy(q[quadlen].op,"if");
-    strcpy(q[quadlen].arg1,temp);
     char x[10];
-    sprintf(x,"%d",lnum);char l[]="L";
-    strcpy(q[quadlen].res,strcat(l,x));
+    sprintf(x,"%d",lnum);char l[11]="L";
+    strcat(l,x);
+    err = lookup(l,scope,type,quadlen);
+    q[quadlen].res = link;
+    st2[top2] = link;
     quadlen++;
-
- temp_i++;
- }
+    temp_i++;
+}
 
 void while3()
 {
-
-printf("\ngoto L%d \n",l_while);
-fprintf(fp,"\ngoto L%d\n",l_while);
-q[quadlen].op = (char*)malloc(sizeof(char)*5);
+    fprintf(fp,"goto L%d\n",l_while);
+    q[quadlen].op = (char*)malloc(sizeof(char)*5);
     q[quadlen].arg1 = NULL;
     q[quadlen].arg2 = NULL;
-    q[quadlen].res = (char*)malloc(sizeof(char)*(l_while+2));
     strcpy(q[quadlen].op,"goto");
     char x[10];
     sprintf(x,"%d",l_while);
-    char l[]="L";
-    strcpy(q[quadlen].res,strcat(l,x));
+    char l[11]="L";
+    strcat(l,x);
+    err = lookup(l,scope,type,quadlen);
+    q[quadlen].res = link;
     quadlen++;
-    printf("\nL%d: \n",lnum); //change made from lnum++ to lnum   
-    fprintf(fp,"\nL%d: \n",lnum);
-    //change from lnum-1 to lnum   
+    fprintf(fp,"L%d: \n",lnum++); 
     q[quadlen].op = (char*)malloc(sizeof(char)*6);
     q[quadlen].arg1 = NULL;
-    q[quadlen].arg2 = NULL;
-    q[quadlen].res = (char*)malloc(sizeof(char)*(lnum+2));
- 
-    printf("here1 %d\n",quadlen);     
+    q[quadlen].arg2 = NULL;    
     strcpy(q[quadlen].op,"Label");
- 
-    printf("here2\n");   char x1[10];
+    char x1[10];
     sprintf(x1,"%d",lnum-1);
- 
-       char l1[]="L";
-    strcpy(q[quadlen].res,strcat(l1,x1));
+    char l1[11]="L";
+    strcat(l1,x1);
+    err = lookup(l1,scope,type,quadlen);
+    q[quadlen].res = link;
     quadlen++;
 }
 
@@ -451,95 +625,152 @@ void codegen()
     strcpy(temp,"T");
     sprintf(tmp_i, "%d", temp_i);
     strcat(temp,tmp_i);
-    printf("%s = %s %s %s\n",temp,st[top-2],st[top-1],st[top]);
-    fprintf(fp,"%s = %s %s %s\n",temp,st[top-2],st[top-1],st[top]);
-    q[quadlen].op = (char*)malloc(sizeof(char)*strlen(st[top-1]));
-    q[quadlen].arg1 = (char*)malloc(sizeof(char)*strlen(st[top-2]));
-    q[quadlen].arg2 = (char*)malloc(sizeof(char)*strlen(st[top]));
-    q[quadlen].res = (char*)malloc(sizeof(char)*strlen(temp));
-    strcpy(q[quadlen].op,st[top-1]);
-    strcpy(q[quadlen].arg1,st[top-2]);
-    strcpy(q[quadlen].arg2,st[top]);
-    strcpy(q[quadlen].res,temp);
+    fprintf(fp,"%s = %s %s %s\n",temp,st2[top2-1]->name,st1[top],st2[top2]->name);
+    q[quadlen].op = (char*)malloc(sizeof(char)*strlen(st1[top]));
+    strcpy(q[quadlen].op,st1[top]);
+    q[quadlen].arg1 = st2[top2-1];
+    q[quadlen].arg2 = st2[top2];
+    err = lookup(temp,scope,type,quadlen);
+    q[quadlen].res = link;
     quadlen++;
-    top-=2;
-    strcpy(st[top],temp);
-
-temp_i++;
+    top2-=1;
+    top-=1;
+    st2[top2] = link;
+    temp_i++;
 }
 
-
-
-void push_t(char* text)
+void push_t()
 {
-    printf("pushed : %s\n",text);
-    strcpy(st[++top],text);
-    
+    st2[++top2] = link; 
+}
+
+void push_op(char* text)
+{
+    strcpy(st1[++top],text);  
 }
 
 void codegen_assigna()
 {
-strcpy(temp,"T");
-sprintf(tmp_i, "%d", temp_i);
-strcat(temp,tmp_i);
-printf("%s = %s %s %s %s\n",temp,st[top-3],st[top-2],st[top-1],st[top]);
-fprintf(fp,"%s = %s %s %s %s\n",temp,st[top-3],st[top-2],st[top-1],st[top]);
-//printf("%d\n",strlen(st[top]));
-if(strlen(st[top])==1)
-{
-	//printf("hello");
-	
-    char t[20];
-	//printf("hello");
-	strcpy(t,st[top-2]);
-	strcat(t,st[top-1]);
-	q[quadlen].op = (char*)malloc(sizeof(char)*strlen(t));
-    q[quadlen].arg1 = (char*)malloc(sizeof(char)*strlen(st[top-3]));
-    q[quadlen].arg2 = (char*)malloc(sizeof(char)*strlen(st[top]));
-    q[quadlen].res = (char*)malloc(sizeof(char)*strlen(temp));
-    strcpy(q[quadlen].op,t);
-    strcpy(q[quadlen].arg1,st[top-3]);
-    strcpy(q[quadlen].arg2,st[top]);
-    strcpy(q[quadlen].res,temp);
-    quadlen++;
-    
-}
-else
-{
-	q[quadlen].op = (char*)malloc(sizeof(char)*strlen(st[top-2]));
-    q[quadlen].arg1 = (char*)malloc(sizeof(char)*strlen(st[top-3]));
-    q[quadlen].arg2 = (char*)malloc(sizeof(char)*strlen(st[top-1]));
-    q[quadlen].res = (char*)malloc(sizeof(char)*strlen(temp));
-    strcpy(q[quadlen].op,st[top-2]);
-    strcpy(q[quadlen].arg1,st[top-3]);
-    strcpy(q[quadlen].arg2,st[top-1]);
-    strcpy(q[quadlen].res,temp);
-    quadlen++;
-}
-top-=4;
-
-temp_i++;
-strcpy(st[++top],temp);
+    strcpy(temp,"T");
+    sprintf(tmp_i, "%d", temp_i);
+    strcat(temp,tmp_i);
+    fprintf(fp,"%s = %s %s %s %s\n",temp,st2[top2-1]->name,st1[top-1],st1[top],st2[top2]->name);
+    if(strlen(st1[top])==1)
+    {        
+        char t[120];
+        strcpy(t,st1[top-1]);
+        strcat(t,st1[top]);
+        q[quadlen].op = (char*)malloc(sizeof(char)*strlen(t));
+        strcpy(q[quadlen].op,t);
+        q[quadlen].arg1 = st2[top2-1];
+        q[quadlen].arg2 = st2[top2];
+        err = lookup(temp,scope,type,quadlen);
+        q[quadlen].res = link;
+        quadlen++;  
+    }
+    else
+    {
+        q[quadlen].op = (char*)malloc(sizeof(char)*strlen(st1[top]));
+        strcpy(q[quadlen].op,st1[top]);
+        q[quadlen].arg1 = st2[top2-1];
+        q[quadlen].arg2 = st2[top2];
+        err = lookup(temp,scope,type,quadlen);
+        q[quadlen].res = link;
+        quadlen++;
+    }
+    top2-=2;
+    top-=2;
+    temp_i++;
+    st2[++top2] = link;
 }
 
 void codegen_assign()
 {
-    printf(" %s = %s\n",st[top-2],st[top]);
-    fprintf(fp,"%s = %s",st[top-2],st[top]);
+    fprintf(fp,"%s = %s\n",st2[top2]->name,st2[top2-1]->name);
     q[quadlen].op = (char*)malloc(sizeof(char));
-    q[quadlen].arg1 = (char*)malloc(sizeof(char)*strlen(st[top]));
     q[quadlen].arg2 = NULL;
-    q[quadlen].res = (char*)malloc(sizeof(char)*strlen(st[top-2]));
     strcpy(q[quadlen].op,"=");
-    strcpy(q[quadlen].arg1,st[top]);
-    strcpy(q[quadlen].res,st[top-2]);
-    printf("res : %s\n", q[quadlen].res);
+    q[quadlen].arg1 = st2[top2-1];
+    q[quadlen].res = st2[top2];
     quadlen++;
-    top-=2;
+    top2-=2;
+    top-=1;
 }
 
-// push_relop()
-// {
-// strcpy(st[++top],yytext);
-// }
+void arg1()
+{
+    int rem = arg_count % 3;
+    int m = arg_count / 3;
 
+    for(int i = 0; i < m; ++i){
+        fprintf(fp,"param %s, %s, %s\n",st2[top2]->name,st2[top2-1]->name,st2[top2-2]->name);
+        q[quadlen].op = (char*)malloc(sizeof(char) * 6);
+        strcpy(q[quadlen].op,"param");
+        q[quadlen].arg1 = st2[top2];
+        q[quadlen].arg2 = st2[top2-1];
+        q[quadlen].res = st2[top2-2];
+        quadlen++;
+        top2-=3;
+    }
+    
+    if(rem == 1){
+        fprintf(fp,"param %s\n",st2[top2]->name);
+        q[quadlen].op = (char*)malloc(sizeof(char) * 6);
+        strcpy(q[quadlen].op,"param");
+        q[quadlen].arg1 = st2[top2];
+        q[quadlen].arg2 = NULL;
+        q[quadlen].res = NULL;
+        quadlen++;
+        top2-=1;        
+    }
+    if(rem == 2){
+        fprintf(fp,"param %s, %s\n",st2[top2]->name,st2[top2-1]->name);
+        q[quadlen].op = (char*)malloc(sizeof(char) * 6);
+        strcpy(q[quadlen].op,"param");
+        q[quadlen].arg1 = st2[top2];
+        q[quadlen].arg2 = st2[top2-1];
+        q[quadlen].res = NULL;
+        quadlen++;
+        top2-=2;
+    }
+}
+
+void funcall()
+{
+    fprintf(fp,"call %s, %d\n",st2[top2]->name,arg_count);
+    q[quadlen].op = (char*)malloc(sizeof(char) * 5);
+    strcpy(q[quadlen].op,"call");
+    q[quadlen].arg1 = st2[top2];
+    char x[2];
+    sprintf(x,"%d",arg_count);
+    err = lookup(x,scope,type,quadlen);
+    q[quadlen].arg2 = link;
+    q[quadlen].res = NULL;
+    quadlen++;
+    top2-=1;    
+}
+
+void fun1()
+{
+    fprintf(fp,"func begin %s\n",st2[top2]->name);
+    q[quadlen].op = (char*)malloc(sizeof(char) * 5);
+    strcpy(q[quadlen].op,"func");
+    q[quadlen].arg2 = link;
+    err = lookup("begin",scope,type,quadlen);
+    q[quadlen].arg1 = link;
+    q[quadlen].res = NULL;
+    quadlen++;
+    top2-=1;      
+}
+
+void fun2()
+{
+    fprintf(fp,"func end\n");
+    q[quadlen].op = (char*)malloc(sizeof(char) * 5);
+    strcpy(q[quadlen].op,"func");
+    q[quadlen].arg2 = NULL;
+    err = lookup("end",scope,type,quadlen);
+    q[quadlen].arg1 = link;
+    q[quadlen].res = NULL;
+    quadlen++;     
+}
