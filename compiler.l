@@ -30,7 +30,7 @@ DOUBLE      ({DIGIT}+(\.{DIGIT}+){EXP})
 OPEN_MULTICOMMENT \/\* 
 CLOSE_MULTICOMMENT \*\/
 
-%option yylineno
+%option yylineno    //predefined to help locate line number where the lex token is present
 
 %%
 
@@ -41,9 +41,6 @@ CLOSE_MULTICOMMENT \*\/
 {OPEN_MULTICOMMENT}(.*\n)*.*{CLOSE_MULTICOMMENT} ;
 
 {OPEN_MULTICOMMENT}.* {yyerror("Unterminated Comment");}
-
- /* Regex to truncate identifiers exceeding length 31 */
-
 
 
 "main()"        { printf("%s\n","T_MAIN");
@@ -119,6 +116,7 @@ CLOSE_MULTICOMMENT \*\/
 "++"  { printf("%s\n","T_INC"); return T_INC;}
 "--"  { printf("%s\n","T_DEC"); return T_DEC;}
 
+//use strlen function on the identifier to ensure it does not exceed 31 charecters
 {IDENTIFIER}    { printf("%s\n","T_IDENTIFIER");
   if (strlen(yytext) > 31){
                   yyerror("Identifier length exceeded 31, truncated.\n ");
@@ -177,8 +175,8 @@ CLOSE_MULTICOMMENT \*\/
 
 ({DIGIT})+({LETTER}|_)+ {yyerror("Illegal identifier name");}
 
-[\n]            {}
-[ \t\r\f\v]+    {}
+[\n]            {}  //newline 
+[ \t\r\f\v]+    {}  //empty spaces ignored
 .                       {ECHO;
             printf("char = %s\n",yytext); yyerror("unexpected character");}
 
