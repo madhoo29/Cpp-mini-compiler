@@ -18,6 +18,8 @@
     int top=-1;
     int top2 = -1;
     int ch;
+    
+    //Actions 
     void while1();
     void while2();
     void while3();
@@ -41,6 +43,7 @@
     void predec();
     void array_assign();
     void array_val();
+    
     int num_cases = 0;
     char cases[20];
     int arg_count = 0;
@@ -95,8 +98,8 @@
 
 %union {  
   struct {
-     char* strval;
-     int  intval;
+     char* strval;	//strval holds the value
+     int  intval;	//int val holds the type according to predefined integers
   } structure;
 }
 
@@ -145,7 +148,7 @@ single_stmt: While
     | Switch
     | Assignment
     | Print
-    | Return {$<structure.intval>$ = $<structure.intval>1; printf("return type %d\n",$<structure.intval>$) ;}
+    | Return {$<structure.intval>$ = $<structure.intval>1; printf("return type %d\n",$<structure.intval>$) ;}	//ensures that the return type of the function declaration matches with what is returned in the function body
     | Input
     | Output 
     | increment ';'
@@ -164,6 +167,7 @@ access : T_PUBLIC ':'
 Class : T_CLASS IDENTIFIER '{' {scope++;enter_scope(scope); }  access  Functions  access  Functions '}' {exit_scope(scope + 1); scope--;} 
 	;
 
+// $ allows us to access the values in the union, while @ helps us find the location
 Function_Dec : Type IDENTIFIER {
                 err = lookup($<structure.strval>2, scope, $<structure.intval>1, @2.first_line, 1); 
                 if(!err) fprintf(tptr,"Redeclaration error : %s has already been declared in this scope.\n",$<structure.strval>2);
@@ -435,7 +439,7 @@ int change = 0;
 int gotos[10];
 int goto_i = 0;
 
-
+//ICG displayed in the quadruple table format
 int main(){
     init();
     fp = fopen("ICG.txt","w");
@@ -531,6 +535,8 @@ void test()
         temp_i++;
     }   
 }
+
+// Functions to describe what actions to take when the particular token is encountered in the grammar
 
 void next()
 {
@@ -773,6 +779,7 @@ void arg1()
         top2-=3;
     }
     
+    //Number of elements to pop from the stack depends on how many arguments are present in the expression
     if(rem == 1){
         fprintf(fp,"param %s\n",st2[top2]->name);
         q[quadlen].op = (char*)malloc(sizeof(char) * 6);
@@ -924,8 +931,8 @@ void array_assign()
     strcpy(temp,"T");
     sprintf(tmp_i, "%d", temp_i);
     strcat(temp,tmp_i);
-    int size;
-    if(type == 1)
+    int size;	
+    if(type == 1)	//type variable signifies which datatype the variable belongs to and hence number of bytes to be allocated
         size = 4;
     else if(type == 2)
         size = 8;
